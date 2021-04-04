@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 
+#define ECC_RTSMovableTraceChannel ECollisionChannel::ECC_GameTraceChannel10
+
 // Helper for display code file and line
 #define UE__FUNC__ (FString(__FUNCTION__))
 #define UE__LINE__ (FString::FromInt(__LINE__))

@@ -1,19 +1,18 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "RTSViewTargetPawn.h"
+#include "RTSPlayerPawn.h"
 #include "RTSPlayerController.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 
 // Sets default values
-ARTSViewTargetPawn::ARTSViewTargetPawn()
+ARTSPlayerPawn::ARTSPlayerPawn()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	//PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
-
-
+	
 	MoveSpeed = 1.f;
 	RotateSpeed = 1.f;
 	InitialRotator = FRotator(-70.f,0.f,0.f);
@@ -39,14 +38,14 @@ ARTSViewTargetPawn::ARTSViewTargetPawn()
 }
 
 // Called when the game starts or when spawned
-void ARTSViewTargetPawn::BeginPlay()
+void ARTSPlayerPawn::BeginPlay()
 {
 	Super::BeginPlay();
 	SetActorLocation(FVector(GetActorLocation().X, GetActorLocation().Y, 0.f));
 }
 
 // Called every frame
-void ARTSViewTargetPawn::Tick(float DeltaTime)
+void ARTSPlayerPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	
@@ -86,43 +85,68 @@ void ARTSViewTargetPawn::Tick(float DeltaTime)
 	}
 }
 
-void ARTSViewTargetPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void ARTSPlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 	// BindAction
-	PlayerInputComponent->BindAction(TEXT("RTSViewTargetRotate"), EInputEvent::IE_Pressed, this, &ARTSViewTargetPawn::RotateStart);
-	PlayerInputComponent->BindAction(TEXT("RTSViewTargetRotate"), EInputEvent::IE_Released, this, &ARTSViewTargetPawn::RotateEnd);
-	PlayerInputComponent->BindAction(TEXT("RTSViewTargetResetRotate"), EInputEvent::IE_Pressed, this, &ARTSViewTargetPawn::RotateReset);
+	PlayerInputComponent->BindAction(TEXT("RTSViewTargetRotate"), EInputEvent::IE_Pressed, this, &ARTSPlayerPawn::RotateStart);
+	PlayerInputComponent->BindAction(TEXT("RTSViewTargetRotate"), EInputEvent::IE_Released, this, &ARTSPlayerPawn::RotateEnd);
+	PlayerInputComponent->BindAction(TEXT("RTSViewTargetResetRotate"), EInputEvent::IE_Pressed, this, &ARTSPlayerPawn::RotateReset);
+
+	PlayerInputComponent->BindAction(TEXT("RTSViewTargetMouseLeftClick"), EInputEvent::IE_Pressed, this, &ARTSPlayerPawn::OnMouseLeftBtnPressed);
+	PlayerInputComponent->BindAction(TEXT("RTSViewTargetMouseLeftClick"), EInputEvent::IE_Released, this, &ARTSPlayerPawn::OnMouseLeftBtnReleased);
+	PlayerInputComponent->BindAction(TEXT("RTSViewTargetMouseRightClick"), EInputEvent::IE_Pressed, this, &ARTSPlayerPawn::OnMouseRightBtnPressed);
+	PlayerInputComponent->BindAction(TEXT("RTSViewTargetMouseRightClick"), EInputEvent::IE_Released, this, &ARTSPlayerPawn::OnMouseRightBtnReleased);
 	// BindAction
-	PlayerInputComponent->BindAxis(TEXT("RTSViewTargetZoomIn"), this, &ARTSViewTargetPawn::ZoomIn);
+	PlayerInputComponent->BindAxis(TEXT("RTSViewTargetZoomIn"), this, &ARTSPlayerPawn::ZoomIn);
 }
 
-void ARTSViewTargetPawn::MoveForward(float Value)
+void ARTSPlayerPawn::OnMouseLeftBtnPressed()
+{
+	
+}
+
+void ARTSPlayerPawn::OnMouseLeftBtnReleased()
+{
+	
+}
+
+void ARTSPlayerPawn::OnMouseRightBtnPressed()
+{
+	
+}
+
+void ARTSPlayerPawn::OnMouseRightBtnReleased()
+{
+	
+}
+
+void ARTSPlayerPawn::MoveForward(float Value)
 {
 	AddActorLocalOffset(FVector::CrossProduct(FVector::UpVector, Value * Camera->GetRightVector()) * MoveSpeed * (CameraSpringArm->TargetArmLength));
 }
 
-void ARTSViewTargetPawn::MoveRight(float Value)
+void ARTSPlayerPawn::MoveRight(float Value)
 {
 	AddActorLocalOffset(Value * Camera->GetRightVector() * MoveSpeed * (CameraSpringArm->TargetArmLength));
 }
 
-void ARTSViewTargetPawn::RotateStart()
+void ARTSPlayerPawn::RotateStart()
 {
 	bEnableRotate = true;
 }
 
-void ARTSViewTargetPawn::RotateEnd()
+void ARTSPlayerPawn::RotateEnd()
 {
 	bEnableRotate = false;
 }
 
-void ARTSViewTargetPawn::RotateReset()
+void ARTSPlayerPawn::RotateReset()
 {
 	CameraSpringArm->SetRelativeRotation(InitialRotator);
 }
 
-void ARTSViewTargetPawn::ZoomIn(float Value)
+void ARTSPlayerPawn::ZoomIn(float Value)
 {
 	const float NewTargetArmLength = Value * ZoomSpeed * TargetArmLength / 8;
 	TargetArmLength = FMath::Clamp(TargetArmLength + NewTargetArmLength, MinTargetArmLength, MaxTargetArmLength);;

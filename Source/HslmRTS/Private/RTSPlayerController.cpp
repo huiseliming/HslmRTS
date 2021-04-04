@@ -2,7 +2,7 @@
 
 
 #include "RTSPlayerController.h"
-#include "RTSViewTargetPawn.h"
+#include "RTSPlayerPawn.h"
 #include "Engine/World.h"
 
 ARTSPlayerController::ARTSPlayerController()

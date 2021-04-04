@@ -7,7 +7,7 @@
 #include "RTSPlayerController.generated.h"
 
 
-class ARTSViewTargetPawn;
+class ARTSPlayerPawn;
 class APawn;
 /**
  *
@@ -24,6 +24,5 @@ protected:
 	
 public:
 	virtual void Tick(float DeltaSeconds) override;
-
-
+	
 };

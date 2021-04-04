@@ -6,11 +6,11 @@
 
 #include "RTSHUD.h"
 #include "RTSPlayerController.h"
-#include "RTSViewTargetPawn.h"
+#include "RTSPlayerPawn.h"
 
 ARTSGameModeBase::ARTSGameModeBase()
 {
 	PlayerControllerClass = ARTSPlayerController::StaticClass();
-	DefaultPawnClass = ARTSViewTargetPawn::StaticClass();
+	DefaultPawnClass = ARTSPlayerPawn::StaticClass();
 	HUDClass = ARTSHUD::StaticClass();
 }
