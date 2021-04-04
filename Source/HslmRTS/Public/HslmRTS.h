@@ -15,7 +15,7 @@
 class FHslmRTSModule : public IModuleInterface
 {
 public:
-
+	
 	/** IModuleInterface implementation */
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
@@ -30,4 +30,5 @@ public:
 		return FModuleManager::Get().IsModuleLoaded("HslmRTS");
 	}
 };
+
 DECLARE_LOG_CATEGORY_EXTERN(LogHslmRTS, Log, All);

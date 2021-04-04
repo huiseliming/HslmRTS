@@ -9,6 +9,8 @@
 
 class ARTSPlayerPawn;
 class APawn;
+class ARTSHUD;
+
 /**
  *
  */
@@ -25,4 +27,5 @@ protected:
 public:
 	virtual void Tick(float DeltaSeconds) override;
 	
+private:
 };

@@ -3,6 +3,8 @@
 
 #include "UnitBase.h"
 
+#include "RTSSubsystem.h"
+
 // Sets default values
 AUnitBase::AUnitBase()
 {
@@ -15,7 +17,7 @@ AUnitBase::AUnitBase()
 void AUnitBase::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	GetWorld()->GetSubsystem<URTSSubsystem>()->AddToRTSSubsystem(this);
 }
 
 // Called every frame

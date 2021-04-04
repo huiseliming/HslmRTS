@@ -3,11 +3,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
+#include "RTSSubsystem.h"
 #include "GameFramework/Pawn.h"
 #include "RTSPlayerPawn.generated.h"
 
 class USpringArmComponent;
 class UCameraComponent;
+class AUnitBase;
+class ARTSPlayerController;
 
 UCLASS()
 class HSLMRTS_API ARTSPlayerPawn : public APawn
@@ -33,10 +37,15 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	void UpdateSelectTick();
+	void UpdateUnderCursorPreselectActor();
+	void UpdateTransformTick(float DeltaTime);
+
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-	//
+	virtual void PossessedBy(AController* NewController) override;
+	virtual void UnPossessed() override;
+	
 	UFUNCTION()
 	void OnMouseLeftBtnPressed();
 	//
@@ -49,8 +58,24 @@ public:
 	UFUNCTION()
     void OnMouseRightBtnReleased();
 
-	// ViewTarget Move Rotate Zoom BEGIN
+	void DoSingleSelect();
+	void DoBoxSelect();
+	
+	UPROPERTY()
+	TArray<AActor*> SelectedActors;
+	UPROPERTY()
+	AActor* FocusedActor;
+	UPROPERTY()
+	TArray<AActor*> PreselectActors;
+	
+	UPROPERTY()
+	ARTSPlayerController* RTSPlayerController;
+	
+private:
+	bool bIsSelecting;
+	
 public:
+	// ViewTarget Move Rotate Zoom BEGIN
 	void MoveForward(float Value);
 	void MoveRight(float Value);
 	

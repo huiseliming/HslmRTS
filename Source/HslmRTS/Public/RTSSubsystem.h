@@ -6,6 +6,8 @@
 #include "Subsystems/WorldSubsystem.h"
 #include "RTSSubsystem.generated.h"
 
+class AUnitBase;
+
 /**
  *
  */
@@ -18,4 +20,12 @@ public:
 	virtual bool ShouldCreateSubsystem(UObject* Outer) const override { return true; }
 	virtual void Initialize(FSubsystemCollectionBase& Collection)override;
 	virtual void Deinitialize()override;
+
+	void AddToRTSSubsystem(AUnitBase* Uint);
+	void RemoveFromRTSSubsystem(AUnitBase* Uint);
+	
+	// All unit will save to set  
+	UPROPERTY()
+	TSet<AUnitBase*> WorldUintBaseSet;
+	
 };

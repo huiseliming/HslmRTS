@@ -2,8 +2,7 @@
 
 
 #include "RTSPlayerController.h"
-#include "RTSPlayerPawn.h"
-#include "Engine/World.h"
+#include "RTSHUD.h"
 
 ARTSPlayerController::ARTSPlayerController()
 {
