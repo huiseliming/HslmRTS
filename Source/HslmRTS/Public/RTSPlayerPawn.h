@@ -65,8 +65,6 @@ public:
 	TArray<AActor*> SelectedActors;
 	UPROPERTY()
 	AActor* FocusedActor;
-	UPROPERTY()
-	TArray<AActor*> PreselectActors;
 	
 	UPROPERTY()
 	ARTSPlayerController* RTSPlayerController;
