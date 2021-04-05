@@ -60,42 +60,7 @@ void ARTSPlayerPawn::Tick(float DeltaTime)
 	{
 		if (!bIsSelecting)
 		{
-			UpdateUnderCursorPreselectActor();
 			UpdateTransformTick(DeltaTime);
-		}
-	}
-}
-
-void ARTSPlayerPawn::UpdateUnderCursorPreselectActor()
-{
-	FHitResult HitResult;
-	if(RTSPlayerController->GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, false, HitResult))
-	{
-		TArray<AActor*>& PreselectActorsRef = RTSPlayerController->GetHUD<ARTSHUD>()->GetPreselectActorsRef();
-		AActor* HitActor = HitResult.Actor.Get();
-		if(HitActor && PreselectActorsRef.Num() == 1 && PreselectActorsRef[0] == HitActor)
-		{
-			return;
-		}
-		for (int32 i = 0; i < PreselectActorsRef.Num(); i++)
-		{
-			if(PreselectActorsRef[i] == HitActor)
-			{
-				if (i != 0)
-				{
-					PreselectActorsRef.Swap(0,i);
-				}
-			}
-			else
-			{
-				// OnUnpreselected(PreselectActors[i]);
-			}
-		}
-		PreselectActorsRef.SetNum(1);
-		if(PreselectActorsRef[0] != HitActor)
-		{
-			//OnPreselected(HitActor);
-			PreselectActorsRef[0] = HitActor;
 		}
 	}
 }
@@ -162,72 +127,25 @@ void ARTSPlayerPawn::UnPossessed()
 void ARTSPlayerPawn::OnMouseLeftBtnPressed()
 {
 	check(RTSPlayerController);
+	RTSPlayerController->GetHUD<ARTSHUD>()->DoSelectStart();
 	bIsSelecting = true;
-	RTSPlayerController->GetHUD<ARTSHUD>()->SetDrawSelectBox(true);
-	FVector2D& FirstPointRef = RTSPlayerController->GetHUD<ARTSHUD>()->GetFirstPointRef();
-	RTSPlayerController->GetMousePosition(FirstPointRef.X, FirstPointRef.Y);
 }
 
 void ARTSPlayerPawn::OnMouseLeftBtnReleased()
 {
 	check(RTSPlayerController);
-	FVector2D& FirstPointRef = RTSPlayerController->GetHUD<ARTSHUD>()->GetFirstPointRef();
-	FVector2D& SecondPointRef = RTSPlayerController->GetHUD<ARTSHUD>()->GetSecondPointRef();
-	if ((FirstPointRef - SecondPointRef).SizeSquared() < 100.f)
-	{
-		DoSingleSelect();
-	}else
-	{
-		DoBoxSelect();
-	}
+	RTSPlayerController->GetHUD<ARTSHUD>()->DoSelectFinish();
 	bIsSelecting = false;
-	RTSPlayerController->GetHUD<ARTSHUD>()->SetDrawSelectBox(false);
 }
 
 void ARTSPlayerPawn::OnMouseRightBtnPressed()
 {
-
+	
 }
 
 void ARTSPlayerPawn::OnMouseRightBtnReleased()
 {
 
-}
-
-void ARTSPlayerPawn::DoSingleSelect()
-{
-	TArray<AActor*>& PreselectActorsRef = RTSPlayerController->GetHUD<ARTSHUD>()->GetPreselectActorsRef();
-	if (PreselectActorsRef.IsValidIndex(0))
-	{
-		ARTSActor* RTSActor = Cast<ARTSActor>(PreselectActorsRef[0]);
-		if(RTSActor)
-		{
-			SelectedActors.Empty();
-			SelectedActors.Add(RTSActor);
-			FocusedActor = RTSActor;
-			UE_LOG(LogHslmRTS, Log, TEXT("SingleSelect %s"), *FocusedActor->GetName());
-			return;
-		}
-		AUnitBase* Unit = Cast<AUnitBase>(PreselectActorsRef[0]);
-		if(Unit)
-		{
-			SelectedActors.Empty();
-			SelectedActors.Add(Unit);
-			FocusedActor = Unit;
-			UE_LOG(LogHslmRTS, Log, TEXT("SingleSelect %s"), *FocusedActor->GetName());
-			return;
-		}
-	}
-}
-
-void ARTSPlayerPawn::DoBoxSelect()
-{
-	TArray<AActor*>& PreselectActorsRef = RTSPlayerController->GetHUD<ARTSHUD>()->GetPreselectActorsRef();
-	SelectedActors = PreselectActorsRef;
-	for (auto& SelectedActor : SelectedActors)
-	{
-		UE_LOG(LogHslmRTS, Log, TEXT("BoxSelect %s"), *SelectedActor->GetName());
-	}
 }
 
 void ARTSPlayerPawn::MoveForward(float Value)

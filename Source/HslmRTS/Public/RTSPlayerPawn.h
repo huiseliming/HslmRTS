@@ -36,9 +36,7 @@ protected:
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
-	void UpdateSelectTick();
-	void UpdateUnderCursorPreselectActor();
+	
 	void UpdateTransformTick(float DeltaTime);
 
 	// Called to bind functionality to input
@@ -57,20 +55,11 @@ public:
 	//
 	UFUNCTION()
     void OnMouseRightBtnReleased();
-
-	void DoSingleSelect();
-	void DoBoxSelect();
 	
-	UPROPERTY()
-	TArray<AActor*> SelectedActors;
-	UPROPERTY()
-	AActor* FocusedActor;
+	int32  bIsSelecting;
 	
 	UPROPERTY()
 	ARTSPlayerController* RTSPlayerController;
-	
-private:
-	bool bIsSelecting;
 	
 public:
 	// ViewTarget Move Rotate Zoom BEGIN

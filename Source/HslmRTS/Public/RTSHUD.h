@@ -25,16 +25,42 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void DrawHUD() override;
 
-	TArray<AActor*>& GetPreselectActorsRef() { return PreselectActors; }
-	FVector2D& GetFirstPointRef() { return FirstPoint; }
-	FVector2D& GetSecondPointRef() { return SecondPoint; }
-	void SetDrawSelectBox(bool IsDraw);
+	TArray<AActor*>& GetSelectedActors() { return SelectedActors; }
+	const TArray<AActor*>& GetPreselectActors() { return PreselectedActors; }
+	AActor* GetFocusedActor() const { return FocusedActor; }
+	
+	void UpdatePreselectedActorUnderCursor();
+	void UpdatePreselectedActorsInBox();
+	
+	void DoSelectStart();
+	void DoSelectFinish();
+	void DoSingleSelect();
+	void DoBoxSelect();
 
+	void ClearPreselectActors();
+	void ClearSelectedActors();
+	void SelectSingleActor(AActor* Actor);
+	void SelectActors(TArray<AActor*>& Actors);
+	
+	void OnActorSelected(AActor* Actor);
+	void OnActorUnselected(AActor* Actor);
+	void OnActorPreselected(AActor* Actor);
+	void OnActorUnpreselected(AActor* Actor);
+
+	
 	UPROPERTY()
-	TArray<AActor*> PreselectActors;
+	TArray<AActor*> SelectedActors;
+	UPROPERTY()
+	AActor* FocusedActor;
+	UPROPERTY()
+	TArray<AActor*> PreselectedActors;
 
+
+	int32 SelectedActorsCounter;
+	int32 PreselectedActorsCounter;
+	
 private:
-	bool bIsDrawSelectBox;
+	bool bIsSelecting;
 
 	FVector2D FirstPoint;
 	FVector2D SecondPoint;
