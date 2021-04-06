@@ -1,7 +1,7 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "RTSHUD.h"
+#include "Gameplay/RTSHUD.h"
 
 #include "EngineUtils.h"
 #include "HslmRTS.h"

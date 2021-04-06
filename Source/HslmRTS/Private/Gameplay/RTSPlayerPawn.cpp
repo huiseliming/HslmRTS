@@ -1,13 +1,10 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "RTSPlayerPawn.h"
-#include "HslmRTS.h"
+#include "Gameplay/RTSPlayerPawn.h"
 #include "EngineUtils.h"
-#include "RTSHUD.h"
-#include "RTSPlayerController.h"
-#include "UnitBase.h"
-#include "RTSActor.h"
+#include "Gameplay/RTSHUD.h"
+#include "Gameplay/RTSPlayerController.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 

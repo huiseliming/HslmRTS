@@ -1,8 +1,8 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "RTSPlayerController.h"
-#include "RTSHUD.h"
+#include "Gameplay/RTSPlayerController.h"
+#include "Gameplay/RTSHUD.h"
 
 ARTSPlayerController::ARTSPlayerController()
 {

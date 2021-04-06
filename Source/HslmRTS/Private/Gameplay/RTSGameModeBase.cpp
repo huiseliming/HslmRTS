@@ -1,12 +1,12 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "RTSGameModeBase.h"
+#include "Gameplay/RTSGameModeBase.h"
 
 
-#include "RTSHUD.h"
-#include "RTSPlayerController.h"
-#include "RTSPlayerPawn.h"
+#include "Gameplay/RTSHUD.h"
+#include "Gameplay/RTSPlayerController.h"
+#include "Gameplay/RTSPlayerPawn.h"
 
 ARTSGameModeBase::ARTSGameModeBase()
 {
