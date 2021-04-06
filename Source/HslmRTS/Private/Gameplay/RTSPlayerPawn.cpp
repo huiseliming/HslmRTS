@@ -3,6 +3,8 @@
 
 #include "Gameplay/RTSPlayerPawn.h"
 #include "EngineUtils.h"
+#include "HslmRTS.h"
+#include "UnitBase.h"
 #include "Gameplay/RTSHUD.h"
 #include "Gameplay/RTSPlayerController.h"
 #include "Camera/CameraComponent.h"
@@ -24,8 +26,8 @@ ARTSPlayerPawn::ARTSPlayerPawn()
 	TargetArmLength = 5000.f;;
 	bEnableRotate = false;
 
-
 	bIsSelecting = false;
+	bIsShiftPressed = false;
 
 	RootComp = CreateDefaultSubobject<USceneComponent>(TEXT("RootComp"));
 	SetRootComponent(RootComp);
@@ -102,10 +104,12 @@ void ARTSPlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAction(TEXT("RTSViewTargetRotate"), EInputEvent::IE_Released, this, &ARTSPlayerPawn::RotateEnd);
 	PlayerInputComponent->BindAction(TEXT("RTSViewTargetResetRotate"), EInputEvent::IE_Pressed, this, &ARTSPlayerPawn::RotateReset);
 
-	PlayerInputComponent->BindAction(TEXT("RTSViewTargetMouseLeftClick"), EInputEvent::IE_Pressed, this, &ARTSPlayerPawn::OnMouseLeftBtnPressed);
-	PlayerInputComponent->BindAction(TEXT("RTSViewTargetMouseLeftClick"), EInputEvent::IE_Released, this, &ARTSPlayerPawn::OnMouseLeftBtnReleased);
-	PlayerInputComponent->BindAction(TEXT("RTSViewTargetMouseRightClick"), EInputEvent::IE_Pressed, this, &ARTSPlayerPawn::OnMouseRightBtnPressed);
-	PlayerInputComponent->BindAction(TEXT("RTSViewTargetMouseRightClick"), EInputEvent::IE_Released, this, &ARTSPlayerPawn::OnMouseRightBtnReleased);
+	PlayerInputComponent->BindAction(TEXT("RTSMouseLeftButton"), EInputEvent::IE_Pressed, this, &ARTSPlayerPawn::OnMouseLeftBtnPressed);
+	PlayerInputComponent->BindAction(TEXT("RTSMouseLeftButton"), EInputEvent::IE_Released, this, &ARTSPlayerPawn::OnMouseLeftBtnReleased);
+	PlayerInputComponent->BindAction(TEXT("RTSMouseRightButton"), EInputEvent::IE_Pressed, this, &ARTSPlayerPawn::OnMouseRightBtnPressed);
+	PlayerInputComponent->BindAction(TEXT("RTSMouseRightButton"), EInputEvent::IE_Released, this, &ARTSPlayerPawn::OnMouseRightBtnReleased);
+	PlayerInputComponent->BindAction(TEXT("RTSKeyboardShiftButton"), EInputEvent::IE_Pressed, this, &ARTSPlayerPawn::OnKeyboardShiftBtnPressed);
+	PlayerInputComponent->BindAction(TEXT("RTSKeyboardShiftButton"), EInputEvent::IE_Released, this, &ARTSPlayerPawn::OnKeyboardShiftBtnReleased);
 	
 	// BindAction
 	PlayerInputComponent->BindAxis(TEXT("RTSViewTargetZoomIn"), this, &ARTSPlayerPawn::ZoomIn);
@@ -137,12 +141,60 @@ void ARTSPlayerPawn::OnMouseLeftBtnReleased()
 
 void ARTSPlayerPawn::OnMouseRightBtnPressed()
 {
-	
+	check(RTSPlayerController);
+	if (bIsShiftPressed)
+	{
+		if (RTSPlayerController->GetHUD<ARTSHUD>()->GetPreselectActors().Num() < 1)
+		{
+			// TODO: MoveToActor
+			return;
+		}
+		FHitResult HitResult;
+		if(RTSPlayerController->GetHitResultUnderCursor(ECC_RTSMovementTraceChannel, false, HitResult))
+		{
+			for (AActor* SelectedActor : RTSPlayerController->GetHUD<ARTSHUD>()->GetSelectedActors())
+			{
+				AUnitBase* Unit = Cast<AUnitBase>(SelectedActor);
+				if (Unit)
+				{
+					Unit->PushOrder(MakeShared<FMoveToLocationOrder>(HitResult.Location));
+				}
+			}
+		}
+	}else{
+		if (RTSPlayerController->GetHUD<ARTSHUD>()->GetPreselectActors().Num() < 1)
+		{
+			// TODO: MoveToActor
+			return;
+		}
+		FHitResult HitResult;
+		if(RTSPlayerController->GetHitResultUnderCursor(ECC_RTSMovementTraceChannel, false, HitResult))
+		{
+			for (AActor* SelectedActor : RTSPlayerController->GetHUD<ARTSHUD>()->GetSelectedActors())
+			{
+				AUnitBase* Unit = Cast<AUnitBase>(SelectedActor);
+				if (Unit)
+				{
+					Unit->MoveToLocation(HitResult.Location);
+				}
+			}
+		}
+	}
 }
 
 void ARTSPlayerPawn::OnMouseRightBtnReleased()
 {
 
+}
+
+void ARTSPlayerPawn::OnKeyboardShiftBtnPressed()
+{
+	bIsShiftPressed = true;
+}
+
+void ARTSPlayerPawn::OnKeyboardShiftBtnReleased()
+{
+	bIsShiftPressed = false;
 }
 
 void ARTSPlayerPawn::MoveForward(float Value)

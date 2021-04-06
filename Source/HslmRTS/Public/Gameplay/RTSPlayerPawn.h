@@ -46,18 +46,19 @@ public:
 	
 	UFUNCTION()
 	void OnMouseLeftBtnPressed();
-	//
 	UFUNCTION()
 	void OnMouseLeftBtnReleased();
-	//
 	UFUNCTION()
     void OnMouseRightBtnPressed();
-	//
 	UFUNCTION()
     void OnMouseRightBtnReleased();
-	
-	int32  bIsSelecting;
-	
+	UFUNCTION()
+	void OnKeyboardShiftBtnPressed();
+	UFUNCTION()
+	void OnKeyboardShiftBtnReleased();
+
+	bool bIsSelecting;
+	bool bIsShiftPressed;
 	UPROPERTY()
 	ARTSPlayerController* RTSPlayerController;
 	

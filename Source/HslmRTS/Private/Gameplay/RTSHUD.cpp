@@ -59,7 +59,7 @@ void ARTSHUD::DrawHUD()
 void ARTSHUD::UpdatePreselectedActorUnderCursor()
 {
 	FHitResult HitResult;
-    if(GetOwningPlayerController()->GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, false, HitResult))
+    if(GetOwningPlayerController()->GetHitResultUnderCursor(ECollisionChannel::ECC_Camera, false, HitResult))
     {
     	AActor* HitActor = HitResult.Actor.Get();
     	if(HitActor && PreselectedActors.Num() == 1 && PreselectedActors[0] == HitActor) 

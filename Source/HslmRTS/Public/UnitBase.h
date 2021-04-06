@@ -3,8 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Navigation\PathFollowingComponent.h"
+#include "RTSOrder.h"
 #include "GameFramework/Character.h"
 #include "UnitBase.generated.h"
+
 
 UCLASS()
 class HSLMRTS_API AUnitBase : public ACharacter
@@ -25,5 +28,19 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void PossessedBy(AController* NewController) override;
+	virtual void UnPossessed() override;
+	
+	void MoveToLocation(FVector Goal);
+	
+	UFUNCTION()
+	void OnReceiveMoveCompleted(FAIRequestID RequestID, EPathFollowingResult::Type Result);
+	
+public:
+	
+	
+	void PushOrder(TSharedPtr<IRTSOrder> RTSOrder);
+	void ExecuteOrder(TSharedPtr<IRTSOrder> RTSOrder);
 
+	FRTSOrderQueue RTSOrderQueue;
 };
