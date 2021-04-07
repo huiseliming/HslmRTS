@@ -11,26 +11,26 @@ ARTSPlayerState::ARTSPlayerState()
 	LocalTeamMask = 0;
 }
 
-void ARTSPlayerState::Initialize(uint32 PlayerIndex, uint32 TeamIndex)
+void ARTSPlayerState::Initialize(uint32 InPlayerIndex, uint32 InTeamIndex)
 {
-	this->PlayerIndex = PlayerIndex;
-	ControlMask = 1 << PlayerIndex;
-	this->TeamIndex = TeamIndex;
+	PlayerIndex = InPlayerIndex;
+	ControlMask = 1 << InPlayerIndex;
+	TeamIndex = InTeamIndex;
 }
 
-void ARTSPlayerState::AddControl(uint32 PlayerIndex)
+void ARTSPlayerState::AddControl(uint32 InPlayerIndex)
 {
-	ControlMask |= 1 << PlayerIndex;
+	ControlMask |= 1 << InPlayerIndex;
 }
 
-void ARTSPlayerState::RemoveControl(uint32 PlayerIndex)
+void ARTSPlayerState::RemoveControl(uint32 InPlayerIndex)
 {
-	ControlMask &= ~(1 << PlayerIndex);
+	ControlMask &= ~(1 << InPlayerIndex);
 }
 
-bool ARTSPlayerState::HasControl(uint32 PlayerIndex)
+bool ARTSPlayerState::HasControl(uint32 InPlayerIndex)
 {
-	return 0 != ((1 << PlayerIndex) | ControlMask);
+	return 0 != ((1 << InPlayerIndex) | ControlMask);
 }
 
 void ARTSPlayerState::SetLocalTeamMask(uint32 TeamMask)
@@ -38,17 +38,17 @@ void ARTSPlayerState::SetLocalTeamMask(uint32 TeamMask)
 	LocalTeamMask = TeamMask;
 }
 
-void ARTSPlayerState::AddPlayerToLocalTeam(uint32 PlayerIndex)
+void ARTSPlayerState::AddPlayerToLocalTeam(uint32 InTeamIndex)
 {
-	LocalTeamMask |= 1 << PlayerIndex;
+	LocalTeamMask |= 1 << InTeamIndex;
 }
 
-void ARTSPlayerState::RemovePlayerToLocalTeam(uint32 PlayerIndex)
+void ARTSPlayerState::RemovePlayerToLocalTeam(uint32 InTeamIndex)
 {
-	LocalTeamMask &= ~(1 << PlayerIndex);
+	LocalTeamMask &= ~(1 << InTeamIndex);
 }
 
-bool ARTSPlayerState::IsTeammate(uint32 PlayerIndex)
+bool ARTSPlayerState::IsTeammate(uint32 InTeamIndex)
 {
-	return 0 != ((1 << PlayerIndex) | LocalTeamMask);
+	return 0 != ((1 << InTeamIndex) | LocalTeamMask);
 }
