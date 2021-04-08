@@ -6,6 +6,14 @@
 #include "GameFramework/Actor.h"
 #include "FogOfWar.generated.h"
 
+struct FFogOfWarTile
+{
+	FFogOfWarTile() : VisibleCounter(0){ }
+	void AddAgent(){ VisibleCounter++; }
+	void RemoveAgent() { VisibleCounter--; }
+	int32 VisibleCounter;
+};
+
 UCLASS()
 class HSLMRTS_API AFogOfWar : public AActor
 {
@@ -22,4 +30,9 @@ protected:
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	
+	void UpdateFogOfWar();
+	
+	TArray<FFogOfWarTile> FogOfWarTiles;
 };

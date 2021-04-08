@@ -14,4 +14,6 @@ class HSLMRTS_API ARTSWorldVolume : public AVolume
 {
 	GENERATED_BODY()
 	
+	
+	
 };

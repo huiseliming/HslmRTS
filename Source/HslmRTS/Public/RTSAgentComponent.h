@@ -38,7 +38,7 @@ public:
 	void SetVisionRadius(int32 NewVisionRadius);
 	UFUNCTION(BlueprintCallable, Category = "Hslm|RTSAgentComponent")
 	void SetHeightLevel(int32 NewHeightLevel);
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "RTSAgentComponent")
 	bool bAgentEnabled;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "RTSAgentComponent")
@@ -46,5 +46,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "RTSAgentComponent")
 	int32 HeightLevel;
 
+
+	TArray<int32>  CacheVisionTiles;
+	FIntVector CacheAgentTile;
+	
 	// FogOfWar END
 };

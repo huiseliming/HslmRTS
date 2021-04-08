@@ -24,3 +24,13 @@ void UFogOfWarSubsystem::RemoveRTSAgent(URTSAgentComponent* RTSAgent)
 	const int32 RemovedNum = RTSAgents.Remove(RTSAgent);
 	check(RemovedNum);
 }
+
+TArray<URTSAgentComponent*>& UFogOfWarSubsystem::GetRTSAgents()
+{
+	return RTSAgents;
+}
+
+FIntVector UFogOfWarSubsystem::WorldLocationToWorldTile(FVector WorldLocation)
+{
+	return FIntVector();
+}
