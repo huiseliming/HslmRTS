@@ -38,27 +38,48 @@ o******oo
     I
     v(y)
 */
+struct FRecursiveVisionContext
+{
+	UFogOfWarSubsystem* FogOfWarSubsystem;
+	int32 OriginX;
+	int32 OriginY;
+	int32 MaxDepth;
+};
+
+static void RecursiveVision(FRecursiveVisionContext& Context , int32 Depth, int32 Start, int32 End)
+{
+	int32 y = Context.OriginY + Depth;
+	for (int32 i = Start; i <= End; i++)
+	{
+		int32 x = Context.OriginX + i;
+		if (!Context.FogOfWarSubsystem->HasVision(Context.OriginX, Context.OriginY, x, y))
+		{
+			int32 NewStart = (((Depth + 1) * Start) * 2 ) + Depth / Depth * 2;
+			int32 NewEnd = (((Depth + 1) * i) * 2 ) + Depth / Depth * 2;
+			RecursiveVision(Context, Depth + 1, NewStart, NewEnd);
+			Start = i;
+		}
+	}
+	int32 NextDepth = Depth + 1;
+	if (NextDepth < Context.MaxDepth)
+	{
+		int32 NewStart = (((Depth + 1) * Start) * 2 ) + Depth / Depth * 2;
+		int32 NewEnd = (((Depth + 1) * End) * 2 ) + Depth / Depth * 2;
+		RecursiveVision(Context, NextDepth, NewStart, NewEnd);
+	}
+}
+
 void AFogOfWar::UpdateFogOfWar()
 {
-	// auto FogOfWarSubsystem = GetWorld()->GetSubsystem<UFogOfWarSubsystem>();
-	// for (auto Agent : FogOfWarSubsystem->GetRTSAgents())
-	// {
-	// 	FIntVector WorldTile = FogOfWarSubsystem->WorldLocationToWorldTile(Agent->GetComponentLocation());
-	// 	for (int32 i = 0; i < Agent->VisionRadius; i++)
-	// 	{
-	// 		for (int32 j = 0 - Agent->VisionRadius; j < Agent->VisionRadius; j++)
-	// 		{
-	// 			int32 OriginX = WorldTile.X;
-	// 			int32 OriginY = WorldTile.Y;
-	// 			int32 TargetX = WorldTile.X + j;
-	// 			int32 TargetY = WorldTile.Y + i;
-	// 			if(FogOfWarSubsystem->HasVision(OriginX, OriginY, TargetX, TargetY)){
-	// 				
-	// 			}else{
-	// 				
-	// 			}
-	// 		}
-	// 	}
-	// }
+	// https://www.albertford.com/shadowcasting/#Quadrant
+	auto FogOfWarSubsystem = GetWorld()->GetSubsystem<UFogOfWarSubsystem>();
+	for (auto Agent : FogOfWarSubsystem->GetRTSAgents())
+	{
+		FRecursiveVisionContext Context;
+		Context.MaxDepth = Agent->VisionRadius;
+		// Context.OriginX = ;
+		// Context.OriginY = ;
+		RecursiveVision(Context,1, -1, 1);
+	}
 }
 
