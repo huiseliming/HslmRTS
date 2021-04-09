@@ -45,12 +45,37 @@ public:
 	void UpdateFogOfWar();
 	void RecursiveVision(FRecursiveVisionContext& Context, int32 Depth, int32 Start, int32 End);
 
+	// FogOfWar Texture BEGIN
+	void Initialize(FBoxSphereBounds Origin);
+	void Cleanup();
+	
+	// the texture   
+	UPROPERTY()
+	UTexture2D* FogOfWarTexture;
+	uint8* FogOfWarTextureBuffer;
+	uint32* FogOfWarTextureBufferSize;
+	FUpdateTextureRegion2D FogOfWarTextureUpdateRegion;
+
+	UPROPERTY()
+	UTexture2D* FogOfWarUpscaleTexture;
+	uint8* FogOfWarUpscaleTextureBuffer;
+	uint32* FogOfWarUpscaleTextureBufferSize;
+	FUpdateTextureRegion2D FogOfWarUpscaleTextureUpdateRegion;
+
+	// FogOfWar resolution 
+	FIntVector FogOfWarTextureResolution;
+	FIntVector FogOfWarUpscaleTextureResolution;
+
+	
+	// FogOfWar Texture END
+
+
+
+	//Tile info BEGIN
 
 	void WorldLocationToTileXY(FVector InWorldLocation, int32 TileX, int32 TileY);
 
-
-	
-	int32 GetWorldTileIndex(int32 X, int32 Y) const { return X + Y * GetTileNumber();}
+	int32 GetWorldTileIndex(int32 X, int32 Y) const { return X + Y * GetTileXResolution();}
 	int32 GetWorldHeightLevel(int32 X, int32 Y){ return WorldTileInfos[GetWorldTileIndex(X,Y)] & 0xFFFF;}
 	bool IsBlock(int32& X, int32& Y){ return (WorldTileInfos[GetWorldTileIndex(X, Y)] & (1 << 31)) != 0; }
 	bool HasVision(int32& OriginX, int32& OriginY, int32& TargetX, int32& TargetY)
@@ -58,16 +83,17 @@ public:
 		return !IsBlock(TargetX,TargetY) && GetWorldHeightLevel(OriginX,OriginY) >= GetWorldHeightLevel(TargetX,TargetY);
 	}
 	
-	int32 GetTileNumber() const { return TileNumber; }
+	int32 GetTileXResolution() const { return FogOfWarTileResolution.X; }
+
 	
-	// 
+	FIntVector FogOfWarTileResolution;
+	// The size of tile 
 	int32 TileSize;
-	// 
-	int32 TileNumber;
 	
 	// Bit32 is Block flag, Low16Bit Is HeightLevel
 	TArray<int32> WorldTileInfos;
 
 	// Cache for tiles current has agents;
 	TArray<FFogOfWarTile> FogOfWarTiles;
+	//Tile info END
 };

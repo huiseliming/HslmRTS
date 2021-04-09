@@ -13,7 +13,17 @@ UCLASS()
 class HSLMRTS_API ARTSWorldVolume : public AVolume
 {
 	GENERATED_BODY()
-	
+protected:
+	virtual void BeginPlay() override;
+
+	// Set reasonable default values.
+
+public:
+	void Initialize();
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="RTSWorldVolume")
+	float TileSize;
 	
 	
 };

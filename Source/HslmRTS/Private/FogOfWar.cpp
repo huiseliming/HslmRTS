@@ -73,6 +73,37 @@ void AFogOfWar::RecursiveVision(FRecursiveVisionContext& Context, int32 Depth, i
 		RecursiveVision(Context, NextDepth, NewStart, NewEnd); 
 	}
 }
+
+void AFogOfWar::Initialize(FBoxSphereBounds Origin)
+{
+	// calculate tile resolution
+	FogOfWarTileResolution = FIntVector(
+		FMath::CeilToInt(Origin.BoxExtent.X / TileSize) * 2,
+		FMath::CeilToInt(Origin.BoxExtent.Y / TileSize) * 2,
+		0);
+	// resolution
+	WorldTileInfos.SetNumUninitialized(FogOfWarTileResolution.X * FogOfWarTileResolution.Y);
+	for (int32 TileY = 0; TileY < FogOfWarTileResolution.Y; ++TileY)
+	{
+		for (int32 TileX = 0; TileX < FogOfWarTileResolution.X; ++TileX)
+		{
+			// const FVector2D TileLocationWorld2D = TileXYToTileWorldLocation(X, Y);
+			// const float TileHeightWorld = CalculateWorldHeightAtLocation(TileLocationWorld2D);
+			// const int32 TileHeightLevel = FMath::FloorToInt(TileHeightWorld / LevelHeight);
+			// TileHeights[TileXYToTileIndex(X, Y)] = TileHeightLevel;
+			WorldTileInfos[TileY * FogOfWarTileResolution.Y + FogOfWarTileResolution.X] = ;
+		}
+	}
+	FogOfWarTiles.SetNum(FogOfWarTileResolution.X * FogOfWarTileResolution.Y);
+
+	
+}
+
+void AFogOfWar::Cleanup()
+{
+	
+}
+
 #define Floor FloorToInt
 void AFogOfWar::WorldLocationToTileXY(FVector InWorldLocation, int32 TileX, int32 TileY)
 {
