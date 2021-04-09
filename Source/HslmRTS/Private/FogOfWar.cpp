@@ -7,7 +7,6 @@
 #include "FogOfWarSubsystem.h"
 #include "RTSAgentComponent.h"
 
-
 // Sets default values
 AFogOfWar::AFogOfWar()
 {
@@ -28,47 +27,6 @@ void AFogOfWar::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-
-/*
-oooo@oooo->(x)
-ooo**oooo
-oo****ooo
-o******oo
-********o
-    I
-    v(y)
-*/
-struct FRecursiveVisionContext
-{
-	UFogOfWarSubsystem* FogOfWarSubsystem;
-	int32 OriginX;
-	int32 OriginY;
-	int32 MaxDepth;
-};
-
-static void RecursiveVision(FRecursiveVisionContext& Context , int32 Depth, int32 Start, int32 End)
-{
-	int32 y = Context.OriginY + Depth;
-	for (int32 i = Start; i <= End; i++)
-	{
-		int32 x = Context.OriginX + i;
-		if (!Context.FogOfWarSubsystem->HasVision(Context.OriginX, Context.OriginY, x, y))
-		{
-			int32 NewStart = (((Depth + 1) * Start) * 2 ) + Depth / Depth * 2;
-			int32 NewEnd = (((Depth + 1) * i) * 2 ) + Depth / Depth * 2;
-			RecursiveVision(Context, Depth + 1, NewStart, NewEnd);
-			Start = i;
-		}
-	}
-	int32 NextDepth = Depth + 1;
-	if (NextDepth < Context.MaxDepth)
-	{
-		int32 NewStart = (((Depth + 1) * Start) * 2 ) + Depth / Depth * 2;
-		int32 NewEnd = (((Depth + 1) * End) * 2 ) + Depth / Depth * 2;
-		RecursiveVision(Context, NextDepth, NewStart, NewEnd);
-	}
-}
-
 void AFogOfWar::UpdateFogOfWar()
 {
 	// https://www.albertford.com/shadowcasting/#Quadrant
@@ -83,3 +41,46 @@ void AFogOfWar::UpdateFogOfWar()
 	}
 }
 
+/*
+oooo@oooo->(x)
+ooo**oooo
+oo****ooo
+o******oo
+********o
+I
+v(y)
+*/
+
+void AFogOfWar::RecursiveVision(FRecursiveVisionContext& Context, int32 Depth, int32 Start, int32 End)
+{
+	int32 y = Context.OriginY + Depth;
+	for (int32 i = Start; i <= End; i++)
+	{
+		int32 x = Context.OriginX + i;
+		if (!HasVision(Context.OriginX, Context.OriginY, x, y))
+		{
+			int32 NewStart = ((((Depth + 1) * Start) * 2 ) + Depth) / (Depth * 2);
+			int32 NewEnd = ((((Depth + 1) * i) * 2 ) + Depth) / (Depth * 2);
+			RecursiveVision(Context, Depth + 1, NewStart, NewEnd);
+			Start = i;
+		}
+	}
+	int32 NextDepth = Depth + 1;
+	if (NextDepth < Context.MaxDepth)
+	{
+		int32 NewStart = ((((Depth + 1) * Start) * 2 ) + Depth) / (Depth * 2);
+		int32 NewEnd = ((((Depth + 1) * End) * 2 ) + Depth) / (Depth * 2);
+		RecursiveVision(Context, NextDepth, NewStart, NewEnd); 
+	}
+}
+#define Floor FloorToInt
+void AFogOfWar::WorldLocationToTileXY(FVector InWorldLocation, int32 TileX, int32 TileY)
+{
+	FVector WorldLocation(InWorldLocation.X,InWorldLocation.Y,0.f);
+	FVector RTSWorldOriToWorldLocation = WorldLocation - (GetActorLocation() - FVector(TileNumber / 2 * TileSize));
+	
+	int32 X = FMath::Floor(RTSWorldOriToWorldLocation.X / TileSize);
+	int32 Y = FMath::Floor(RTSWorldOriToWorldLocation.Y / TileSize);
+	//return FIntVector(X,Y,GetWorldHeightLevel([Y * TileNumber + X]));
+}
+#undef Floor

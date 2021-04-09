@@ -29,8 +29,3 @@ TArray<URTSAgentComponent*>& UFogOfWarSubsystem::GetRTSAgents()
 {
 	return RTSAgents;
 }
-
-FIntVector UFogOfWarSubsystem::WorldLocationToWorldTile(FVector WorldLocation)
-{
-	return FIntVector();
-}
