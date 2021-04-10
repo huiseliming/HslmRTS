@@ -7,15 +7,17 @@
 #include "FogOfWar.generated.h"
 
 class UFogOfWarSubsystem;
+class ARTSWorldVolume;
 
-struct FFogOfWarTile
+struct FAgentCache
 {
-	FFogOfWarTile() : VisibleCounter(0){ }
+	FAgentCache() : VisibleCounter(0){ }
 	void AddAgent(){ VisibleCounter++; }
 	void RemoveAgent() { VisibleCounter--; }
 	bool IsVisible() const { return VisibleCounter > 0; }
 	int32 VisibleCounter;
 };
+
 struct FRecursiveVisionContext
 {
 	UFogOfWarSubsystem* FogOfWarSubsystem;
@@ -45,10 +47,10 @@ public:
 	void UpdateFogOfWar();
 	void RecursiveVision(FRecursiveVisionContext& Context, int32 Depth, int32 Start, int32 End);
 
-	// FogOfWar Texture BEGIN
-	void Initialize(FBoxSphereBounds Origin);
+	void Initialize();
 	void Cleanup();
-	
+	int16 CalculateWorldHeightLevelAtLocation(const FVector2D WorldLocation);
+	// FogOfWar Texture BEGIN
 	// the texture   
 	UPROPERTY()
 	UTexture2D* FogOfWarTexture;
@@ -76,8 +78,8 @@ public:
 	void WorldLocationToTileXY(FVector InWorldLocation, int32 TileX, int32 TileY);
 
 	int32 GetWorldTileIndex(int32 X, int32 Y) const { return X + Y * GetTileXResolution();}
-	int32 GetWorldHeightLevel(int32 X, int32 Y){ return WorldTileInfos[GetWorldTileIndex(X,Y)] & 0xFFFF;}
-	bool IsBlock(int32& X, int32& Y){ return (WorldTileInfos[GetWorldTileIndex(X, Y)] & (1 << 31)) != 0; }
+	int32 GetWorldHeightLevel(int32 X, int32 Y){ return FogOfWarTiles[GetWorldTileIndex(X,Y)] & 0xFFFF;}
+	bool IsBlock(int32& X, int32& Y){ return (FogOfWarTiles[GetWorldTileIndex(X, Y)] & (1 << 31)) != 0; }
 	bool HasVision(int32& OriginX, int32& OriginY, int32& TargetX, int32& TargetY)
 	{
 		return !IsBlock(TargetX,TargetY) && GetWorldHeightLevel(OriginX,OriginY) >= GetWorldHeightLevel(TargetX,TargetY);
@@ -85,15 +87,26 @@ public:
 	
 	int32 GetTileXResolution() const { return FogOfWarTileResolution.X; }
 
+
+	
+
+	// The size of tile 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="FogOfWar")
+	float TileSize;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="FogOfWar")
+	ARTSWorldVolume* RTSWorldVolume;
 	
 	FIntVector FogOfWarTileResolution;
-	// The size of tile 
-	int32 TileSize;
+
+	FVector OriginCoordinate;
+	// world center 
+	FVector WorldCenter;
 	
 	// Bit32 is Block flag, Low16Bit Is HeightLevel
-	TArray<int32> WorldTileInfos;
+	TArray<uint32> FogOfWarTiles;
 
 	// Cache for tiles current has agents;
-	TArray<FFogOfWarTile> FogOfWarTiles;
-	//Tile info END
+	TArray<FAgentCache> TileAgentCache;
+
 };
+

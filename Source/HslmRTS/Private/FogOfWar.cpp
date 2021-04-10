@@ -3,9 +3,11 @@
 
 #include "FogOfWar.h"
 
-
+#include "HslmRTS.h"
 #include "FogOfWarSubsystem.h"
 #include "RTSAgentComponent.h"
+#include "RTSWorldVolume.h"
+#include "Components/BrushComponent.h"
 
 // Sets default values
 AFogOfWar::AFogOfWar()
@@ -74,34 +76,59 @@ void AFogOfWar::RecursiveVision(FRecursiveVisionContext& Context, int32 Depth, i
 	}
 }
 
-void AFogOfWar::Initialize(FBoxSphereBounds Origin)
+void AFogOfWar::Initialize()
 {
+	Cleanup();
+	UBrushComponent* RTSWorldBrushComponent = RTSWorldVolume->GetBrushComponent();
+	const FBoxSphereBounds RTSWorldBounds = RTSWorldBrushComponent->CalcBounds(RTSWorldBrushComponent->GetComponentTransform());
 	// calculate tile resolution
 	FogOfWarTileResolution = FIntVector(
-		FMath::CeilToInt(Origin.BoxExtent.X / TileSize) * 2,
-		FMath::CeilToInt(Origin.BoxExtent.Y / TileSize) * 2,
-		0);
+		FMath::CeilToInt(RTSWorldBounds.BoxExtent.X / TileSize) * 2,
+		FMath::CeilToInt(RTSWorldBounds.BoxExtent.Y / TileSize) * 2,
+		0.f);
+	WorldCenter = RTSWorldBounds.Origin;
+
+	OriginCoordinate = FVector(
+		RTSWorldBounds.Origin.X - TileSize * FogOfWarTileResolution.X,
+		RTSWorldBounds.Origin.Y - TileSize * FogOfWarTileResolution.Y,
+		RTSWorldBounds.Origin.Z);
+	
 	// resolution
-	WorldTileInfos.SetNumUninitialized(FogOfWarTileResolution.X * FogOfWarTileResolution.Y);
+	FogOfWarTiles.Empty();
+	FogOfWarTiles.SetNumUninitialized(FogOfWarTileResolution.X * FogOfWarTileResolution.Y);
 	for (int32 TileY = 0; TileY < FogOfWarTileResolution.Y; ++TileY)
 	{
 		for (int32 TileX = 0; TileX < FogOfWarTileResolution.X; ++TileX)
 		{
-			// const FVector2D TileLocationWorld2D = TileXYToTileWorldLocation(X, Y);
-			// const float TileHeightWorld = CalculateWorldHeightAtLocation(TileLocationWorld2D);
-			// const int32 TileHeightLevel = FMath::FloorToInt(TileHeightWorld / LevelHeight);
-			// TileHeights[TileXYToTileIndex(X, Y)] = TileHeightLevel;
-			WorldTileInfos[TileY * FogOfWarTileResolution.Y + FogOfWarTileResolution.X] = ;
+			FVector2D WorldPosition = FVector2D(WorldCenter.X,WorldCenter.Y) + FVector2D(
+				TileSize * (TileX + 0.5f - FogOfWarTileResolution.X),
+				TileSize * (TileY + 0.5f - FogOfWarTileResolution.Y));
+			int16 HeightLevel = CalculateWorldHeightLevelAtLocation(WorldPosition);
+			FogOfWarTiles[TileY * FogOfWarTileResolution.X + TileX] = uint16(HeightLevel);
 		}
 	}
-	FogOfWarTiles.SetNum(FogOfWarTileResolution.X * FogOfWarTileResolution.Y);
-
-	
+	TileAgentCache.Empty();
+	TileAgentCache.SetNum(FogOfWarTileResolution.X * FogOfWarTileResolution.Y);
 }
 
 void AFogOfWar::Cleanup()
 {
 	
+}
+
+int16 AFogOfWar::CalculateWorldHeightLevelAtLocation(const FVector2D WorldLocation)
+{
+	// Cast ray to hit world.
+	FHitResult HitResult;
+	if (GetWorld()->LineTraceSingleByChannel(
+		HitResult,
+		FVector(WorldLocation.X, WorldLocation.Y, 128 * 256 * 100.0f),
+		FVector(WorldLocation.X, WorldLocation.Y, -128 * 256 * 100.0f),
+		ECC_RTSMovementTraceChannel))
+	{
+		return HitResult.Location.Z / 100.f;
+	}
+	return INT16_MIN;
 }
 
 #define Floor FloorToInt
