@@ -47,27 +47,31 @@ public:
 	void UpdateFogOfWar();
 	void RecursiveVision(FRecursiveVisionContext& Context, int32 Depth, int32 Start, int32 End);
 
+	UFUNCTION(BlueprintCallable, CallInEditor)
 	void Initialize();
 	void Cleanup();
 	int16 CalculateWorldHeightLevelAtLocation(const FVector2D WorldLocation);
+
+	void CreateTexture();
+	void DestroyTexture();
+	
 	// FogOfWar Texture BEGIN
 	// the texture   
 	UPROPERTY()
-	UTexture2D* FogOfWarTexture;
-	uint8* FogOfWarTextureBuffer;
-	uint32* FogOfWarTextureBufferSize;
-	FUpdateTextureRegion2D FogOfWarTextureUpdateRegion;
-
+	UTexture2D* Texture;
+	uint8* TextureBuffer;
+	uint32* TextureBufferSize;
+	FUpdateTextureRegion2D TextureUpdateRegion;
+	FIntVector TextureResolution;
+	
 	UPROPERTY()
-	UTexture2D* FogOfWarUpscaleTexture;
-	uint8* FogOfWarUpscaleTextureBuffer;
-	uint32* FogOfWarUpscaleTextureBufferSize;
-	FUpdateTextureRegion2D FogOfWarUpscaleTextureUpdateRegion;
-
-	// FogOfWar resolution 
-	FIntVector FogOfWarTextureResolution;
-	FIntVector FogOfWarUpscaleTextureResolution;
-
+	UTexture2D* UpscaleTexture;
+	uint8* UpscaleTextureBuffer;
+	uint32* UpscaleTextureBufferSize;
+	FUpdateTextureRegion2D UpscaleTextureUpdateRegion;
+	FIntVector UpscaleTextureResolution;
+	
+	// FogOfWar resolution
 	
 	// FogOfWar Texture END
 
@@ -75,20 +79,17 @@ public:
 
 	//Tile info BEGIN
 
-	void WorldLocationToTileXY(FVector InWorldLocation, int32 TileX, int32 TileY);
+	void WorldLocationToTileXY(FVector InWorldLocation, int32& TileX, int32& TileY);
 
-	int32 GetWorldTileIndex(int32 X, int32 Y) const { return X + Y * GetTileXResolution();}
-	int32 GetWorldHeightLevel(int32 X, int32 Y){ return FogOfWarTiles[GetWorldTileIndex(X,Y)] & 0xFFFF;}
-	bool IsBlock(int32& X, int32& Y){ return (FogOfWarTiles[GetWorldTileIndex(X, Y)] & (1 << 31)) != 0; }
+	int32 GetWorldTileIndex(int32 X, int32 Y) const { return X + Y * GetTileResolutionX();}
+	int16 GetWorldHeightLevel(int32 X, int32 Y){ return TileInfos[GetWorldTileIndex(X,Y)] & 0xFFFF;}
+	bool IsBlock(int32& X, int32& Y){ return (TileInfos[GetWorldTileIndex(X, Y)] & (1 << 31)) != 0; }
 	bool HasVision(int32& OriginX, int32& OriginY, int32& TargetX, int32& TargetY)
 	{
 		return !IsBlock(TargetX,TargetY) && GetWorldHeightLevel(OriginX,OriginY) >= GetWorldHeightLevel(TargetX,TargetY);
 	}
 	
-	int32 GetTileXResolution() const { return FogOfWarTileResolution.X; }
-
-
-	
+	int32 GetTileResolutionX() const { return TileResolution.X; }
 
 	// The size of tile 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="FogOfWar")
@@ -96,15 +97,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="FogOfWar")
 	ARTSWorldVolume* RTSWorldVolume;
 	
-	FIntVector FogOfWarTileResolution;
+	FIntVector TileResolution;
 
 	FVector OriginCoordinate;
-	// world center 
-	FVector WorldCenter;
 	
 	// Bit32 is Block flag, Low16Bit Is HeightLevel
-	TArray<uint32> FogOfWarTiles;
-
+	TArray<uint32> TileInfos;
 	// Cache for tiles current has agents;
 	TArray<FAgentCache> TileAgentCache;
 

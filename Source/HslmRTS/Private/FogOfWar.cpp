@@ -14,6 +14,8 @@ AFogOfWar::AFogOfWar()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	TextureBuffer = nullptr;
 }
 
 // Called when the game starts or when spawned
@@ -82,33 +84,29 @@ void AFogOfWar::Initialize()
 	UBrushComponent* RTSWorldBrushComponent = RTSWorldVolume->GetBrushComponent();
 	const FBoxSphereBounds RTSWorldBounds = RTSWorldBrushComponent->CalcBounds(RTSWorldBrushComponent->GetComponentTransform());
 	// calculate tile resolution
-	FogOfWarTileResolution = FIntVector(
-		FMath::CeilToInt(RTSWorldBounds.BoxExtent.X / TileSize) * 2,
-		FMath::CeilToInt(RTSWorldBounds.BoxExtent.Y / TileSize) * 2,
+	TileResolution = FIntVector(
+		FMath::RoundUpToPowerOfTwo(FMath::CeilToInt(RTSWorldBounds.BoxExtent.X / TileSize) * 2),
+		FMath::RoundUpToPowerOfTwo(FMath::CeilToInt(RTSWorldBounds.BoxExtent.Y / TileSize) * 2),
 		0.f);
-	WorldCenter = RTSWorldBounds.Origin;
-
-	OriginCoordinate = FVector(
-		RTSWorldBounds.Origin.X - TileSize * FogOfWarTileResolution.X,
-		RTSWorldBounds.Origin.Y - TileSize * FogOfWarTileResolution.Y,
-		RTSWorldBounds.Origin.Z);
+	OriginCoordinate = RTSWorldBounds.Origin - FVector(TileSize * TileResolution.X, TileSize * TileResolution.Y, 0.f);
 	
-	// resolution
-	FogOfWarTiles.Empty();
-	FogOfWarTiles.SetNumUninitialized(FogOfWarTileResolution.X * FogOfWarTileResolution.Y);
-	for (int32 TileY = 0; TileY < FogOfWarTileResolution.Y; ++TileY)
+	// generate tile info
+	TileInfos.Empty();
+	TileInfos.SetNumUninitialized(TileResolution.X * TileResolution.Y);
+	for (int32 TileY = 0; TileY < TileResolution.Y; ++TileY)
 	{
-		for (int32 TileX = 0; TileX < FogOfWarTileResolution.X; ++TileX)
+		for (int32 TileX = 0; TileX < TileResolution.X; ++TileX)
 		{
-			FVector2D WorldPosition = FVector2D(WorldCenter.X,WorldCenter.Y) + FVector2D(
-				TileSize * (TileX + 0.5f - FogOfWarTileResolution.X),
-				TileSize * (TileY + 0.5f - FogOfWarTileResolution.Y));
+			FVector2D WorldPosition =
+				FVector2D(OriginCoordinate.X,OriginCoordinate.Y) +
+				FVector2D(TileSize * (TileX + 0.5f), TileSize * (TileY + 0.5f));
 			int16 HeightLevel = CalculateWorldHeightLevelAtLocation(WorldPosition);
-			FogOfWarTiles[TileY * FogOfWarTileResolution.X + TileX] = uint16(HeightLevel);
+			TileInfos[TileY * TileResolution.X + TileX] = uint16(HeightLevel);
 		}
 	}
+	// generate tile agent cache
 	TileAgentCache.Empty();
-	TileAgentCache.SetNum(FogOfWarTileResolution.X * FogOfWarTileResolution.Y);
+	TileAgentCache.SetNum(TileResolution.X * TileResolution.Y);
 }
 
 void AFogOfWar::Cleanup()
@@ -131,14 +129,52 @@ int16 AFogOfWar::CalculateWorldHeightLevelAtLocation(const FVector2D WorldLocati
 	return INT16_MIN;
 }
 
-#define Floor FloorToInt
-void AFogOfWar::WorldLocationToTileXY(FVector InWorldLocation, int32 TileX, int32 TileY)
+void AFogOfWar::CreateTexture()
 {
-	FVector WorldLocation(InWorldLocation.X,InWorldLocation.Y,0.f);
-	FVector RTSWorldOriToWorldLocation = WorldLocation - (GetActorLocation() - FVector(TileNumber / 2 * TileSize));
+	TextureResolution.X = TileResolution.X;
+	TextureResolution.Y = TileResolution.Y;
 	
-	int32 X = FMath::Floor(RTSWorldOriToWorldLocation.X / TileSize);
-	int32 Y = FMath::Floor(RTSWorldOriToWorldLocation.Y / TileSize);
-	//return FIntVector(X,Y,GetWorldHeightLevel([Y * TileNumber + X]));
+	// new and init texture buffer
+	TextureBuffer = new uint8[TextureResolution.X * TextureResolution.Y * 4];
+	for (int32 Y = 0; Y < TextureResolution.Y; ++Y)
+	{
+		for (int32 X = 0; X < TextureResolution.X; ++X)
+		{
+			const int i = Y * TextureResolution.Y + X;
+			
+			const int iBlue = i * 4 + 0;
+			const int iGreen = i * 4 + 1;
+			const int iRed = i * 4 + 2;
+			const int iAlpha = i * 4 + 3;
+			TextureBuffer[iBlue] = 0;
+			TextureBuffer[iGreen] = 0;
+			TextureBuffer[iRed] = 0;
+			TextureBuffer[iAlpha] = 0;
+		}
+	}
+	// create texture obj
+	Texture = UTexture2D::CreateTransient(TextureResolution.X, TextureResolution.Y);
+	Texture->UpdateResource();
+	// create update texture region
+	TextureUpdateRegion = FUpdateTextureRegion2D(0, 0, 0, 0, TextureResolution.X, TextureResolution.Y);
+	
+}
+
+void AFogOfWar::DestroyTexture()
+{
+	if(TextureBuffer)
+	{
+		delete[] TextureBuffer;
+		TextureBuffer= nullptr;
+	}
+}
+
+#define Floor FloorToInt
+void AFogOfWar::WorldLocationToTileXY(FVector InWorldLocation, int32& TileX, int32& TileY)
+{
+	const FVector WorldLocation(InWorldLocation.X,InWorldLocation.Y,0.f);
+	const FVector TileCoordinateSystemLocation = WorldLocation - OriginCoordinate;
+	TileX = FMath::Floor(WorldLocation.X - OriginCoordinate.X);
+	TileY = FMath::Floor(WorldLocation.Y - OriginCoordinate.Y);
 }
 #undef Floor

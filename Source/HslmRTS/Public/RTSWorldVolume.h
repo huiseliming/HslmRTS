@@ -19,11 +19,5 @@ protected:
 	// Set reasonable default values.
 
 public:
-	void Initialize();
-
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="RTSWorldVolume")
-	float TileSize;
-	
 	
 };
