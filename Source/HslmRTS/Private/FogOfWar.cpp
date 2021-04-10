@@ -8,6 +8,7 @@
 #include "RTSAgentComponent.h"
 #include "RTSWorldVolume.h"
 #include "Components/BrushComponent.h"
+#include "Components/DecalComponent.h"
 
 // Sets default values
 AFogOfWar::AFogOfWar()
@@ -15,14 +16,28 @@ AFogOfWar::AFogOfWar()
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	GridDecal =CreateDefaultSubobject<UDecalComponent>(TEXT("GridDecal"));
+	RootComponent = GridDecal;
+	GridDecal->bIsEditorOnly = true;
+	GridDecal->SetRelativeRotation(FRotator(0.f,90.f, 0.f));
+	
 	TextureBuffer = nullptr;
+	TileSize = 100.f;
 }
 
 // Called when the game starts or when spawned
 void AFogOfWar::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	Initialize();
+	CreateTexture();
+}
+
+void AFogOfWar::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	DestroyTexture();
+	Cleanup();
+	Super::EndPlay(EndPlayReason);
 }
 
 // Called every frame
@@ -154,6 +169,7 @@ void AFogOfWar::CreateTexture()
 	}
 	// create texture obj
 	Texture = UTexture2D::CreateTransient(TextureResolution.X, TextureResolution.Y);
+	Texture->AddToRoot();
 	Texture->UpdateResource();
 	// create update texture region
 	TextureUpdateRegion = FUpdateTextureRegion2D(0, 0, 0, 0, TextureResolution.X, TextureResolution.Y);
@@ -162,6 +178,10 @@ void AFogOfWar::CreateTexture()
 
 void AFogOfWar::DestroyTexture()
 {
+	if(Texture)
+	{
+		Texture->RemoveFromRoot();
+	}
 	if(TextureBuffer)
 	{
 		delete[] TextureBuffer;

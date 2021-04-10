@@ -29,7 +29,9 @@ void URTSAgentComponent::BeginPlay()
 
 void URTSAgentComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	GetWorld()->GetSubsystem<UFogOfWarSubsystem>()->RemoveRTSAgent(this);
+	UFogOfWarSubsystem* FogOfWarSubsystem = GetWorld()->GetSubsystem<UFogOfWarSubsystem>();
+	FogOfWarSubsystem->RemoveRTSAgent(this);
+	Super::EndPlay(EndPlayReason);
 }
 
 // Called every frame

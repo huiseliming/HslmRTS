@@ -15,7 +15,7 @@ void UFogOfWarSubsystem::Deinitialize()
 
 void UFogOfWarSubsystem::AddRTSAgent(URTSAgentComponent* RTSAgent)
 {
-	check(RTSAgents.Contains(RTSAgent));
+	check(!RTSAgents.Contains(RTSAgent));
 	RTSAgents.Add(RTSAgent);
 }
 

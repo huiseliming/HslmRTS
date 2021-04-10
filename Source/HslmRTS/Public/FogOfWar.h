@@ -32,13 +32,16 @@ class HSLMRTS_API AFogOfWar : public AActor
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="FogOfWar", meta=(AllowPrivateAccess = "true"))
+	UDecalComponent* GridDecal;
+	
 	// Sets default values for this actor's properties
 	AFogOfWar();
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
