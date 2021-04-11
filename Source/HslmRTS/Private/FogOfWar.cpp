@@ -50,18 +50,90 @@ void AFogOfWar::Tick(float DeltaTime)
 
 void AFogOfWar::UpdateFogOfWar()
 {
-	// https://www.albertford.com/shadowcasting/#Quadrant
-
 	auto FogOfWarSubsystem = GetWorld()->GetSubsystem<UFogOfWarSubsystem>();
+	for (int32 Y = 0; Y < TextureResolution.Y; ++Y)
+	{
+		for (int32 X = 0; X < TextureResolution.X; ++X)
+		{
+			const int i = Y * TextureResolution.Y + X;
+
+			const int iBlue = i * 4 + 0;
+			const int iGreen = i * 4 + 1;
+			const int iRed = i * 4 + 2;
+			const int iAlpha = i * 4 + 3;
+			TextureBuffer[iBlue] = 0;
+			TextureBuffer[iGreen] = 0;
+			TextureBuffer[iRed] = 0;
+			TextureBuffer[iAlpha] = 0;
+		}
+	}
 	for (auto Agent : FogOfWarSubsystem->GetRTSAgents())
 	{
 		FRecursiveVisionContext Context;
-		Context.MaxDepth = Agent->VisionRadius / TileSize;
+		Context.MaxDepth = FMath::FloorToFloat(Agent->VisionRadius / TileSize);
+		Context.MaxDepthSquare = (Context.MaxDepth + 0.5) * (Context.MaxDepth + 0.5);
 		WorldLocationToTileXY(Agent->GetComponentLocation(), Context.OriginX, Context.OriginY);
 		MarkVision(Context.OriginX, Context.OriginY);
-		RecursiveVision(Context,1, -1, 1);
+		RecursiveVision(Context,1);
 	}
 	Texture->UpdateTextureRegions(0, 1, &TextureUpdateRegion, TextureResolution.X * 4, 4, TextureBuffer);
+}
+
+void AFogOfWar::RecursiveVision(FRecursiveVisionContext& Context, int32 Depth, float StartSlope /*= -1.f*/, float EndSlope /*= 1.f*/)
+{
+	// https://www.albertford.com/shadowcasting/#Quadrant
+	int32 TileY = Context.OriginY + Depth;
+	int32 StartTileX = StartSlope * Depth + FMath::Sign(StartSlope) * 0.5;
+	int32 EndTileX = EndSlope * Depth + FMath::Sign(EndSlope) * 0.5;
+	int32 TileXMaxSquare = Context.MaxDepthSquare - Depth * Depth;
+
+	int32 StartTileXSquare = StartTileX * StartTileX;
+	int32 EndTileXSquare = EndTileX * EndTileX;
+	// just check in start and end , rad check
+	if (StartTileX * StartTileX > TileXMaxSquare) {
+		if (StartTileX > 0)
+		{
+			return;
+		}
+
+		StartTileX++;
+		while (StartTileX * StartTileX > TileXMaxSquare)
+		{
+			StartTileX++;
+		}
+		StartSlope = (float(StartTileX) - 0.5f) / float(Depth);
+	}
+	if (EndTileX * EndTileX > TileXMaxSquare) {
+		if (EndTileX < 0)
+		{
+			return;
+		}
+		EndTileX--;
+		while (EndTileX * EndTileX > TileXMaxSquare)
+		{
+			EndTileX--;
+		}
+		EndSlope = (float(EndTileX) + 0.5f) / float(Depth);
+	}
+	if(EndTileX < StartTileX){
+		return;
+	}
+	for (int32 i = StartTileX; i <= EndTileX; i++)
+	{
+		int32 TileX = Context.OriginX + i;
+		if (!HasVision(Context.OriginX, Context.OriginY, TileX, TileY))
+		{
+			RecursiveVision(Context, Depth + 1, StartSlope, (float(i) - 0.5f) / float(Depth));
+			StartSlope = (float(i) + 0.5f) / float(Depth);
+		}else{
+			MarkVision(TileX, TileY);
+		}
+	}
+	int32 NextDepth = Depth + 1;
+	if (NextDepth <= Context.MaxDepth)
+	{
+		RecursiveVision(Context, NextDepth, StartSlope, EndSlope);
+	}
 }
 
 /*
@@ -74,30 +146,33 @@ I
 v(y)
 */
 
-void AFogOfWar::RecursiveVision(FRecursiveVisionContext& Context, int32 Depth, int32 Start, int32 End)
-{
-	int32 y = Context.OriginY + Depth;
-	for (int32 i = Start; i <= End; i++)
-	{
-		int32 x = Context.OriginX + i;
-		if (!HasVision(Context.OriginX, Context.OriginY, x, y))
-		{
-			int32 NewStart = ((((Depth + 1) * Start) * 2 ) + Depth) / (Depth * 2);
-			int32 NewEnd = ((((Depth + 1) * i) * 2 ) + Depth) / (Depth * 2);
-			RecursiveVision(Context, Depth + 1, NewStart, NewEnd);
-			Start = i;
-		}else{
-			MarkVision(x,y);
-		}
-	}
-	int32 NextDepth = Depth + 1;
-	if (NextDepth < Context.MaxDepth)
-	{
-		int32 NewStart = ((((Depth + 1) * Start) * 2 ) + Depth) / (Depth * 2);
-		int32 NewEnd = ((((Depth + 1) * End) * 2 ) + Depth) / (Depth * 2);
-		RecursiveVision(Context, NextDepth, NewStart, NewEnd);
-	}
-}
+//void AFogOfWar::RecursiveVision(FRecursiveVisionContext& Context, int32 Depth, int32 Start, int32 End)
+//{
+//	int32 TileY = Context.OriginY + Depth;
+//	for (int32 i = Start; i <= End; i++)
+//	{
+//		int32 TileX = Context.OriginX + i;
+//		if (!HasVision(Context.OriginX, Context.OriginY, TileX, TileY))
+//		{
+//		//             (Depth + 1 ) * Start * 2  Depth
+//		// NewStart = ----------------------------------
+//		//              Depth * 2
+//			int32 NewStart = ((((Depth + 1) * Start) * 2 ) - (Start > 0 ? Depth : -Depth)) / (Depth * 2);
+//			int32 NewEnd = ((((Depth + 1) * i) * 2 ) + Depth) / (Depth * 2);
+//			RecursiveVision(Context, Depth + 1, NewStart, NewEnd);
+//			Start = i;
+//		}else{
+//			MarkVision(TileX, TileY);
+//		}
+//	}
+//	int32 NextDepth = Depth + 1;
+//	if (NextDepth < Context.MaxDepth)
+//	{
+//		int32 NewStart = ((((Depth + 1) * Start) * 2 ) - (Start > 0 ? Depth : -Depth)) / (Depth * 2);
+//		int32 NewEnd = ((((Depth + 1) * End) * 2 ) + Depth) / (Depth * 2);
+//		RecursiveVision(Context, NextDepth, NewStart, NewEnd);
+//	}
+//}
 
 void AFogOfWar::Initialize()
 {

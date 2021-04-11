@@ -24,6 +24,4 @@ public:
 	static ARTSHUD* GetRTSHUD(const UObject* WorldContextObject);
 	UFUNCTION(BlueprintPure, Category = "Hslm|RTSFunctionLibrary", meta = (WorldContext = "WorldContextObject"))
 	static ARTSPlayerController* GetRTSPlayerController(const UObject* WorldContextObject);
-	
 };
-

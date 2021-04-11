@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "UnitBase.h"
@@ -36,7 +36,7 @@ void AUnitBase::Tick(float DeltaTime)
 void AUnitBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-	
+
 }
 
 void AUnitBase::PossessedBy(AController* NewController)
@@ -62,7 +62,9 @@ void AUnitBase::OnReceiveMoveCompleted(FAIRequestID RequestID, EPathFollowingRes
 	{
 		Order = RTSOrderQueue.PopOrder();
 	}
+#ifdef WITH_EDITOR
 	UE_LOG(LogHslmRTS, Log, TEXT("OnReceiveMoveCompleted"));
+#endif
 }
 
 void AUnitBase::PushOrder(TSharedPtr<IRTSOrder> RTSOrder)
@@ -83,4 +85,3 @@ void AUnitBase::ExecuteOrder(TSharedPtr<IRTSOrder> RTSOrder)
 	RTSOrderQueue.ClearOrder();
 	(*RTSOrder.Get())(this);
 }
-

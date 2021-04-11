@@ -170,6 +170,13 @@ void ARTSPlayerPawn::OnMouseRightBtnPressed()
 		FHitResult HitResult;
 		if(RTSPlayerController->GetHitResultUnderCursor(ECC_RTSMovementTraceChannel, false, HitResult))
 		{
+#ifdef WITH_EDITOR
+			AActor* HitActor = HitResult.GetActor();
+			if (HitActor != nullptr)
+			{
+				UE_LOG(LogHslmRTS, Log, TEXT("Mouse RightBtn clicked on Actor %s"), *HitActor->GetName());
+			}
+#endif
 			for (AActor* SelectedActor : RTSPlayerController->GetHUD<ARTSHUD>()->GetSelectedActors())
 			{
 				AUnitBase* Unit = Cast<AUnitBase>(SelectedActor);

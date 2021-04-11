@@ -24,7 +24,8 @@ struct FRecursiveVisionContext
 	UFogOfWarSubsystem* FogOfWarSubsystem;
 	int32 OriginX;
 	int32 OriginY;
-	int32 MaxDepth;
+	float MaxDepth;
+	float MaxDepthSquare;
 };
 
 UCLASS()
@@ -49,7 +50,8 @@ public:
 
 
 	void UpdateFogOfWar();
-	void RecursiveVision(FRecursiveVisionContext& Context, int32 Depth, int32 Start, int32 End);
+	//void RecursiveVision(FRecursiveVisionContext& Context, int32 Depth, int32 Start, int32 End);
+	void RecursiveVision(FRecursiveVisionContext& Context, int32 Depth, float StartSlope = -1.f, float EndSlope = 1.f);
 
 	UFUNCTION(BlueprintCallable, CallInEditor)
 	void Initialize();
