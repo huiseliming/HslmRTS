@@ -19,7 +19,7 @@ ARTSPlayerPawn::ARTSPlayerPawn()
 
 	MoveSpeed = 1.f;
 	RotateSpeed = 1.f;
-	InitialRotator = FRotator(-70.f,0.f,0.f);
+	InitialRotator = FRotator(-70.f, -90.f, 0.f);
 	ZoomSpeed = 1.f;
 	MinTargetArmLength = 500.f;
 	MaxTargetArmLength = 10000.f;
@@ -110,7 +110,7 @@ void ARTSPlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAction(TEXT("RTSMouseRightButton"), EInputEvent::IE_Released, this, &ARTSPlayerPawn::OnMouseRightBtnReleased);
 	PlayerInputComponent->BindAction(TEXT("RTSKeyboardShiftButton"), EInputEvent::IE_Pressed, this, &ARTSPlayerPawn::OnKeyboardShiftBtnPressed);
 	PlayerInputComponent->BindAction(TEXT("RTSKeyboardShiftButton"), EInputEvent::IE_Released, this, &ARTSPlayerPawn::OnKeyboardShiftBtnReleased);
-	
+
 	// BindAction
 	PlayerInputComponent->BindAxis(TEXT("RTSViewTargetZoomIn"), this, &ARTSPlayerPawn::ZoomIn);
 }
