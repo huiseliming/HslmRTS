@@ -11,6 +11,7 @@
 #include "Components/DecalComponent.h"
 #include "Engine/PostProcessVolume.h"
 
+
 // Sets default values
 AFogOfWar::AFogOfWar()
 {
@@ -74,109 +75,21 @@ void AFogOfWar::UpdateFogOfWar()
 		Context.MaxDepthSquare = (Context.MaxDepth + 0.5) * (Context.MaxDepth + 0.5);
 		WorldLocationToTileXY(Agent->GetComponentLocation(), Context.OriginX, Context.OriginY);
 		MarkVision(Context.OriginX, Context.OriginY);
-		RecursiveVision(Context,1);
+		IterateVisionBottom(Context,1);
+		IterateVisionTop(Context,1);
+		IterateVisionRight(Context,1);
+		IterateVisionLeft(Context,1);
 	}
 	Texture->UpdateTextureRegions(0, 1, &TextureUpdateRegion, TextureResolution.X * 4, 4, TextureBuffer);
 }
 
-void AFogOfWar::RecursiveVision(FRecursiveVisionContext& Context, int32 Depth, float StartSlope /*= -1.f*/, float EndSlope /*= 1.f*/)
-{
-	// https://www.albertford.com/shadowcasting/#Quadrant
-	int32 TileY = Context.OriginY + Depth;
-	int32 StartTileX = StartSlope * Depth + FMath::Sign(StartSlope) * 0.5;
-	int32 EndTileX = EndSlope * Depth + FMath::Sign(EndSlope) * 0.5;
-	int32 TileXMaxSquare = Context.MaxDepthSquare - Depth * Depth;
-
-	int32 StartTileXSquare = StartTileX * StartTileX;
-	int32 EndTileXSquare = EndTileX * EndTileX;
-	// just check in start and end , rad check
-	if (StartTileX * StartTileX > TileXMaxSquare) {
-		if (StartTileX > 0)
-		{
-			return;
-		}
-
-		StartTileX++;
-		while (StartTileX * StartTileX > TileXMaxSquare)
-		{
-			StartTileX++;
-		}
-		StartSlope = (float(StartTileX) - 0.5f) / float(Depth);
-	}
-	if (EndTileX * EndTileX > TileXMaxSquare) {
-		if (EndTileX < 0)
-		{
-			return;
-		}
-		EndTileX--;
-		while (EndTileX * EndTileX > TileXMaxSquare)
-		{
-			EndTileX--;
-		}
-		EndSlope = (float(EndTileX) + 0.5f) / float(Depth);
-	}
-	if(EndTileX < StartTileX){
-		return;
-	}
-	for (int32 i = StartTileX; i <= EndTileX; i++)
-	{
-		int32 TileX = Context.OriginX + i;
-		if (!HasVision(Context.OriginX, Context.OriginY, TileX, TileY))
-		{
-			RecursiveVision(Context, Depth + 1, StartSlope, (float(i) - 0.5f) / float(Depth));
-			StartSlope = (float(i) + 0.5f) / float(Depth);
-		}else{
-			MarkVision(TileX, TileY);
-		}
-	}
-	int32 NextDepth = Depth + 1;
-	if (NextDepth <= Context.MaxDepth)
-	{
-		RecursiveVision(Context, NextDepth, StartSlope, EndSlope);
-	}
-}
-
-/*
-oooo@oooo->(x)
-ooo**oooo
-oo****ooo
-o******oo
-********o
-I
-v(y)
-*/
-
-//void AFogOfWar::RecursiveVision(FRecursiveVisionContext& Context, int32 Depth, int32 Start, int32 End)
-//{
-//	int32 TileY = Context.OriginY + Depth;
-//	for (int32 i = Start; i <= End; i++)
-//	{
-//		int32 TileX = Context.OriginX + i;
-//		if (!HasVision(Context.OriginX, Context.OriginY, TileX, TileY))
-//		{
-//		//             (Depth + 1 ) * Start * 2  Depth
-//		// NewStart = ----------------------------------
-//		//              Depth * 2
-//			int32 NewStart = ((((Depth + 1) * Start) * 2 ) - (Start > 0 ? Depth : -Depth)) / (Depth * 2);
-//			int32 NewEnd = ((((Depth + 1) * i) * 2 ) + Depth) / (Depth * 2);
-//			RecursiveVision(Context, Depth + 1, NewStart, NewEnd);
-//			Start = i;
-//		}else{
-//			MarkVision(TileX, TileY);
-//		}
-//	}
-//	int32 NextDepth = Depth + 1;
-//	if (NextDepth < Context.MaxDepth)
-//	{
-//		int32 NewStart = ((((Depth + 1) * Start) * 2 ) - (Start > 0 ? Depth : -Depth)) / (Depth * 2);
-//		int32 NewEnd = ((((Depth + 1) * End) * 2 ) + Depth) / (Depth * 2);
-//		RecursiveVision(Context, NextDepth, NewStart, NewEnd);
-//	}
-//}
-
 void AFogOfWar::Initialize()
 {
 	Cleanup();
+	if(RTSWorldVolume == nullptr)
+	{
+		return;
+	}
 	UBrushComponent* RTSWorldBrushComponent = RTSWorldVolume->GetBrushComponent();
 	const FBoxSphereBounds RTSWorldBounds = RTSWorldBrushComponent->CalcBounds(RTSWorldBrushComponent->GetComponentTransform());
 	// calculate tile resolution
@@ -290,3 +203,198 @@ void AFogOfWar::WorldLocationToTileXY(FVector InWorldLocation, int32& TileX, int
 	TileY = FMath::Floor(TileCoordinateSystemLocation.Y / TileSize);
 }
 #undef Floor
+
+// IterateVision BEGIN
+
+//   IterateVision Macro BEGIN
+#define USE_ITERATE_VISION_MACRO_VERSION
+// https://www.albertford.com/shadowcasting/#Quadrant
+#define ITERATE_VISION_FUNCTION(SimulationTileXCalculator, SimulationTileYCalculator, IterateVisionFunction) \
+void AFogOfWar::IterateVisionFunction(FRecursiveVisionContext& Context, int32 Depth, float StartSlope, float EndSlope)\
+{\
+	int32 TileY, TileX;\
+	SimulationTileXCalculator;\
+	int32 StartTileX = StartSlope * Depth + FMath::Sign(StartSlope) * 0.5;\
+	int32 EndTileX = EndSlope * Depth + FMath::Sign(EndSlope) * 0.5;\
+	int32 TileXMaxSquare = Context.MaxDepthSquare - Depth * Depth;\
+	if (StartTileX * StartTileX > TileXMaxSquare) {\
+		if (StartTileX > 0)\
+		{\
+			return;\
+		}\
+		\
+		StartTileX++;\
+		while (StartTileX * StartTileX > TileXMaxSquare)\
+		{\
+			StartTileX++;\
+		}\
+		StartSlope = (float(StartTileX) - 0.5f) / float(Depth);\
+	}\
+	if (EndTileX * EndTileX > TileXMaxSquare) {\
+		if (EndTileX < 0)\
+		{\
+			return;\
+		}\
+		EndTileX--;\
+		while (EndTileX * EndTileX > TileXMaxSquare)\
+		{\
+			EndTileX--;\
+		}\
+		EndSlope = (float(EndTileX) + 0.5f) / float(Depth);\
+	}\
+	if(EndTileX < StartTileX){\
+		return;\
+	}\
+	for (int32 i = StartTileX; i <= EndTileX; i++)\
+	{\
+		SimulationTileYCalculator;\
+		if (!HasVision(Context.OriginX, Context.OriginY, TileX, TileY))\
+		{\
+			IterateVisionFunction(Context, Depth + 1, StartSlope, (float(i) - 0.5f) / float(Depth));\
+			StartSlope = (float(i) + 0.5f) / float(Depth);\
+		}else{\
+			MarkVision(TileX, TileY);\
+		}\
+	}\
+	int32 NextDepth = Depth + 1;\
+	if (NextDepth <= Context.MaxDepth)\
+	{\
+		IterateVisionFunction(Context, NextDepth, StartSlope, EndSlope);\
+	}\
+}\
+//   IterateVision Macro END
+
+namespace IterateVisionDirection
+{
+	enum Type
+	{
+		Bottom = 0,
+        Top = 1,
+        Right = 2,
+        Left = 3,
+		
+    };
+}
+
+void AFogOfWar::IterateVisionBase(FRecursiveVisionContext& Context, int32 Depth, float StartSlope /*= -1.f*/, float EndSlope /*= 1.f*/, int32 Direction)
+{
+	// https://www.albertford.com/shadowcasting/#Quadrant
+	int32 TileY, TileX;
+	switch (Direction)
+	{
+	case IterateVisionDirection::Bottom:
+		TileY = Context.OriginY + Depth;
+		break;
+	case IterateVisionDirection::Top:
+		TileY = Context.OriginY - Depth;
+		break;
+	case IterateVisionDirection::Right:
+		TileX = Context.OriginX + Depth;
+		break;
+	case IterateVisionDirection::Left:
+		TileX = Context.OriginX - Depth;
+		break;
+	}
+	
+	int32 StartTileX = StartSlope * Depth + FMath::Sign(StartSlope) * 0.5;
+	int32 EndTileX = EndSlope * Depth + FMath::Sign(EndSlope) * 0.5;
+	int32 TileXMaxSquare = Context.MaxDepthSquare - Depth * Depth;
+	// int32 StartTileXSquare = StartTileX * StartTileX;
+	// int32 EndTileXSquare = EndTileX * EndTileX;
+	// just check in start and end , rad check
+	if (StartTileX * StartTileX > TileXMaxSquare) {
+		if (StartTileX > 0)
+		{
+			return;
+		}
+
+		StartTileX++;
+		while (StartTileX * StartTileX > TileXMaxSquare)
+		{
+			StartTileX++;
+		}
+		StartSlope = (float(StartTileX) - 0.5f) / float(Depth);
+	}
+	if (EndTileX * EndTileX > TileXMaxSquare) {
+		if (EndTileX < 0)
+		{
+			return;
+		}
+		EndTileX--;
+		while (EndTileX * EndTileX > TileXMaxSquare)
+		{
+			EndTileX--;
+		}
+		EndSlope = (float(EndTileX) + 0.5f) / float(Depth);
+	}
+	if(EndTileX < StartTileX){
+		return;
+	}
+	for (int32 i = StartTileX; i <= EndTileX; i++)
+	{
+		switch (Direction)
+		{
+		case IterateVisionDirection::Bottom:
+			TileX = Context.OriginX + i;
+			break;
+		case IterateVisionDirection::Top:
+			TileX = Context.OriginX - i;
+			break;
+		case IterateVisionDirection::Right:
+			TileY = Context.OriginY + i;
+			break;
+		case IterateVisionDirection::Left:
+			TileY = Context.OriginY - i;
+			break;
+		}
+		if (!HasVision(Context.OriginX, Context.OriginY, TileX, TileY))
+		{
+			IterateVisionBase(Context, Depth + 1, StartSlope, (float(i) - 0.5f) / float(Depth), Direction);
+			StartSlope = (float(i) + 0.5f) / float(Depth);
+		}else{
+			MarkVision(TileX, TileY);
+		}
+	}
+	int32 NextDepth = Depth + 1;
+	if (NextDepth <= Context.MaxDepth)
+	{
+		IterateVisionBase(Context, NextDepth, StartSlope, EndSlope, Direction);
+	}
+}
+#ifdef USE_ITERATE_VISION_MACRO_VERSION
+ITERATE_VISION_FUNCTION((TileY = Context.OriginY + Depth), (TileX = Context.OriginX + i), IterateVisionBottom)
+#else
+void AFogOfWar::IterateVisionBottom(FRecursiveVisionContext& Context, int32 Depth, float StartSlope /*= -1.f*/, float EndSlope /*= 1.f*/)
+{
+	IterateVisionBase(Context, Depth, StartSlope, EndSlope, IterateVisionDirection::Bottom);
+}
+#endif
+
+#ifdef USE_ITERATE_VISION_MACRO_VERSION
+ITERATE_VISION_FUNCTION((TileY = Context.OriginY - Depth), (TileX = Context.OriginX - i), IterateVisionTop)
+#else
+void AFogOfWar::IterateVisionTop(FRecursiveVisionContext& Context, int32 Depth, float StartSlope /*= -1.f*/, float EndSlope /*= 1.f*/)
+{
+	IterateVisionBase(Context, Depth, StartSlope, EndSlope, IterateVisionDirection::Top);
+}
+#endif
+
+#ifdef USE_ITERATE_VISION_MACRO_VERSION
+ITERATE_VISION_FUNCTION((TileX = Context.OriginX + Depth), (TileY = Context.OriginY + i), IterateVisionRight)
+#else
+void AFogOfWar::IterateVisionRight(FRecursiveVisionContext& Context, int32 Depth, float StartSlope /*= -1.f*/, float EndSlope /*= 1.f*/)
+{
+	IterateVisionBase(Context, Depth, StartSlope, EndSlope, IterateVisionDirection::Right);
+}
+
+#endif
+
+#ifdef USE_ITERATE_VISION_MACRO_VERSION
+ITERATE_VISION_FUNCTION((TileX = Context.OriginX - Depth), (TileY = Context.OriginY - i), IterateVisionLeft)
+#else
+void AFogOfWar::IterateVisionLeft(FRecursiveVisionContext& Context, int32 Depth, float StartSlope /*= -1.f*/, float EndSlope /*= 1.f*/)
+{
+	IterateVisionBase(Context, Depth, StartSlope, EndSlope, IterateVisionDirection::Left);
+}
+#endif
+// IterateVision END

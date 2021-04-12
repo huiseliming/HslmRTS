@@ -48,11 +48,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-
 	void UpdateFogOfWar();
-	//void RecursiveVision(FRecursiveVisionContext& Context, int32 Depth, int32 Start, int32 End);
-	void RecursiveVision(FRecursiveVisionContext& Context, int32 Depth, float StartSlope = -1.f, float EndSlope = 1.f);
-
+	
 	UFUNCTION(BlueprintCallable, CallInEditor)
 	void Initialize();
 	void Cleanup();
@@ -133,6 +130,20 @@ public:
 	APostProcessVolume* PostProcessVolume;
 	UPROPERTY(EditInstanceOnly, Category="FogOfWar")
 	UMaterialInterface* PostProcessMaterialInstance;
+	UPROPERTY()
 	UMaterialInstanceDynamic* PostProcessMaterialInstanceDynamic;
 
+private:
+	//void RecursiveVision(FRecursiveVisionContext& Context, int32 Depth, int32 Start, int32 End);
+	void RecursiveVision(FRecursiveVisionContext& Context, int32 Depth, float StartSlope = -1.f, float EndSlope = 1.f);
+	
+	// for debug, macro version is fast
+	void IterateVisionBase(FRecursiveVisionContext& Context, int32 Depth, float StartSlope = -1.f, float EndSlope = 1.f, int32 Direction = 0);
+	
+	void IterateVisionBottom(FRecursiveVisionContext& Context, int32 Depth, float StartSlope = -1.f, float EndSlope = 1.f);
+	void IterateVisionTop(FRecursiveVisionContext& Context, int32 Depth, float StartSlope = -1.f, float EndSlope = 1.f);
+	void IterateVisionRight(FRecursiveVisionContext& Context, int32 Depth, float StartSlope = -1.f, float EndSlope = 1.f);
+	void IterateVisionLeft(FRecursiveVisionContext& Context, int32 Depth, float StartSlope = -1.f, float EndSlope = 1.f);
+
+	
 };
