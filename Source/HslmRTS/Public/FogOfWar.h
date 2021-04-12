@@ -134,9 +134,6 @@ public:
 	UMaterialInstanceDynamic* PostProcessMaterialInstanceDynamic;
 
 private:
-	//void RecursiveVision(FRecursiveVisionContext& Context, int32 Depth, int32 Start, int32 End);
-	void RecursiveVision(FRecursiveVisionContext& Context, int32 Depth, float StartSlope = -1.f, float EndSlope = 1.f);
-	
 	// for debug, macro version is fast
 	void IterateVisionBase(FRecursiveVisionContext& Context, int32 Depth, float StartSlope = -1.f, float EndSlope = 1.f, int32 Direction = 0);
 	
