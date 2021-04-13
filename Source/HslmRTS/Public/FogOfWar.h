@@ -73,7 +73,10 @@ public:
 	uint32* UpscaleTextureBufferSize;
 	FUpdateTextureRegion2D UpscaleTextureUpdateRegion;
 	FIntVector UpscaleTextureResolution;
-
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="FogOfWar")
+	bool bUseUpscaleTexture = false;
+	
 	// FogOfWar resolution
 
 	// FogOfWar Texture END
