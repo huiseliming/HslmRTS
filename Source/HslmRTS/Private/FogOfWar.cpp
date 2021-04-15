@@ -164,7 +164,7 @@ void AFogOfWar::CreateTexture()
 	
 	// create texture obj
 	Texture = UTexture2D::CreateTransient(TextureResolution.X, TextureResolution.Y);
-	Texture->Filter = TextureFilter::TF_Nearest;
+	Texture->Filter = TextureFilter::TF_Trilinear;
 	Texture->UpdateResource();
 	// create update texture region
 	TextureUpdateRegion = FUpdateTextureRegion2D(0, 0, 0, 0, TextureResolution.X, TextureResolution.Y);
