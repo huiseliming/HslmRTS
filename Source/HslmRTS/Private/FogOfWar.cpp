@@ -10,6 +10,90 @@
 #include "Components/BrushComponent.h"
 #include "Components/DecalComponent.h"
 #include "Engine/PostProcessVolume.h"
+typedef uint8_t* Pixels4x4;
+
+uint32_t UpscaleMapping[16 * 16]=
+{
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, // 0
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, // 0x00, 0xFF
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, // 0x00, 0x00
+	0x00000000, 0x00000000, 0x00000000, 0x00000000,
+
+	0x00000000, 0x00000000, 0x00008000, 0x0000FF00, // 1
+	0x00000000, 0x00000000, 0x00000000, 0x00008000, // 0x00, 0x00
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, // 0xFF, 0x00
+	0x00000000, 0x00000000, 0x00000000, 0x00000000,
+
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, // 2
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, // 0x00, 0xFF
+	0x00008000, 0x00000000, 0x00000000, 0x00000000, // 0xFF, 0x00
+	0x0000FF00, 0x00008000, 0x00000000, 0x00000000,
+
+	0x00000000, 0x00000000, 0x00008000, 0x0000FF00, // 3
+	0x00000000, 0x00000000, 0x00000000, 0x00008000, // 0x00, 0xFF
+	0x00008000, 0x00000000, 0x00000000, 0x00000000, // 0xFF, 0x00
+	0x0000FF00, 0x00008000, 0x00000000, 0x00000000,
+
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, // 4
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, // 0x00, 0x00
+	0x00000000, 0x00000000, 0x00000000, 0x00008000, // 0x00, 0xFF
+	0x00000000, 0x00000000, 0x00008000, 0x0000FF00,
+
+	0x00000000, 0x00000000, 0x0000FF00, 0x0000FF00, // 5
+	0x00000000, 0x00000000, 0x0000FF00, 0x0000FF00, // 0x00, 0xFF
+	0x00000000, 0x00000000, 0x0000FF00, 0x0000FF00, // 0x00, 0xFF
+	0x00000000, 0x00000000, 0x0000FF00, 0x0000FF00,
+
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, // 6
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, // 0x00, 0x00
+	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 0xFF, 0xFF
+	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00,
+
+	0x00000000, 0x00008000, 0x0000FF00, 0x0000FF00, // 7
+	0x00008000, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 0x00, 0xFF
+	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 0xFF, 0xFF
+	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00,
+
+	0x0000FF00, 0x00008000, 0x00000000, 0x00000000, // 8
+	0x00008000, 0x00000000, 0x00000000, 0x00000000, // 0xFF, 0x00
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, // 0x00, 0x00
+	0x00000000, 0x00000000, 0x00000000, 0x00000000,
+
+	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 9
+	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 0xFF, 0xFF
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, // 0x00, 0x00
+	0x00000000, 0x00000000, 0x00000000, 0x00000000,
+
+	0x0000FF00, 0x0000FF00, 0x00000000, 0x00000000, // 10
+	0x0000FF00, 0x0000FF00, 0x00000000, 0x00000000, // 0xFF, 0x00
+	0x0000FF00, 0x0000FF00, 0x00000000, 0x00000000, // 0xFF, 0x00
+	0x0000FF00, 0x0000FF00, 0x00000000, 0x00000000,
+
+	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 11
+	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 0xFF, 0xFF
+	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x00008000, // 0xFF, 0x00
+	0x0000FF00, 0x0000FF00, 0x00008000, 0x00000000,
+
+	0x0000FF00, 0x00008000, 0x00000000, 0x00000000, // 12
+	0x00008000, 0x00000000, 0x00000000, 0x00000000, // 0xFF, 0x00
+	0x00000000, 0x00000000, 0x00000000, 0x00008000, // 0x00, 0xFF
+	0x00000000, 0x00000000, 0x00008000, 0x0000FF00,
+
+	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 13
+	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 0xFF, 0xFF
+	0x00008000, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 0x00, 0xFF
+	0x00000000, 0x00008000, 0x0000FF00, 0x0000FF00,
+
+	0x0000FF00, 0x0000FF00, 0x00008000, 0x00000000, // 14
+	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x00008000, // 0xFF, 0x00
+	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 0xFF, 0xFF
+	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00,
+
+	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 15
+	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 0xFF, 0xFF
+	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 0xFF, 0xFF
+	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00,
+};
 
 // Sets default values
 AFogOfWar::AFogOfWar()
@@ -80,7 +164,41 @@ void AFogOfWar::UpdateFogOfWar()
 		IterateVisionRight(Context,1);
 		IterateVisionLeft(Context,1);
 	}
-	Texture->UpdateTextureRegions(0, 1, &TextureUpdateRegion, TextureResolution.X * 4, 4, TextureBuffer);
+	if(bUseUpscaleTexture){
+		UpscaleTextureBuffer = new uint8[TextureResolution.X * TextureResolution.Y * 4 * 16];
+		for (int32 Y = 0; Y < TextureResolution.Y; ++Y)
+		{
+			FString TempString;
+			for (int32 X = 0; X < TextureResolution.X; ++X)
+			{
+
+				int32 NeighborY = FMath::Min(Y + 1, TextureResolution.Y - 1);
+				int32 NeighborX = FMath::Min(X + 1, TextureResolution.X - 1);
+				uint8 Pixel11 = TextureBuffer[(Y * TextureResolution.X + X)*4 + 2];
+				uint8 Pixel12 = TextureBuffer[(Y * TextureResolution.X + NeighborX)*4 + 2];
+				uint8 Pixel21 = TextureBuffer[(NeighborY * TextureResolution.X + X)*4 + 2];
+				uint8 Pixel22 = TextureBuffer[(NeighborY * TextureResolution.X + NeighborX)*4 + 3];
+				
+				int32 Index = ((Pixel11 & 1)|(Pixel12 & 2)|(Pixel21 & 4)|(Pixel22 & 8)) << 4;
+				check((Index /16 * 16 == Index) && Index < 256);
+				uint32_t* UpscaleMappingPtr = &UpscaleMapping[Index];
+				TempString += FString::Printf(TEXT("%02d"), Index / 16);
+				for (int32 Y2 = 0; Y2 < 4; Y2++)
+				{
+					for (int32 X2 = 0; X2 < 4; X2++)
+					{
+						const int i = ((Y * 4 + Y2) * TextureResolution.X) * 4 * 4 + (X * 4) * 4 + X2 * 4;
+						FMemory::Memcpy(&UpscaleTextureBuffer[i], &UpscaleMappingPtr[Y2 * 4 + X2], 4 * sizeof(uint8));
+						
+					}
+				}
+			}
+			UE_LOG(LogHslmRTS, Log, TEXT("%s"), *TempString);
+		}
+		UpscaleTexture->UpdateTextureRegions(0, 1, &UpscaleTextureUpdateRegion, TextureResolution.X * 4 * 4, 4, UpscaleTextureBuffer);
+	}else{
+		Texture->UpdateTextureRegions(0, 1, &TextureUpdateRegion, TextureResolution.X * 4, 4, TextureBuffer);
+	}
 }
 
 void AFogOfWar::Initialize()
@@ -168,10 +286,35 @@ void AFogOfWar::CreateTexture()
 	Texture->UpdateResource();
 	// create update texture region
 	TextureUpdateRegion = FUpdateTextureRegion2D(0, 0, 0, 0, TextureResolution.X, TextureResolution.Y);
+	if(bUseUpscaleTexture)
+	{
+		// new and init texture buffer
+		UpscaleTextureBuffer = new uint8[TextureResolution.X * TextureResolution.Y * 4 * 16];
+		for (int32 Y = 0; Y < TextureResolution.Y * 4; ++Y)
+        {
+        	for (int32 X = 0; X < TextureResolution.X * 4; ++X)
+        	{
+        		const int i = Y * TextureResolution.X * 4  + X;
+        		const int iBlue = i * 4 + 0;
+        		const int iGreen = i * 4 + 1;
+        		const int iRed = i * 4 + 2;
+        		const int iAlpha = i * 4 + 3;
+        		UpscaleTextureBuffer[iBlue] = 0;
+        		UpscaleTextureBuffer[iGreen] = 0;
+        		UpscaleTextureBuffer[iRed] = 0;
+        		UpscaleTextureBuffer[iAlpha] = 0;
+        	}
+        }
+		UpscaleTexture = UTexture2D::CreateTransient(TextureResolution.X * 4, TextureResolution.Y * 4);
+		UpscaleTexture->Filter = TextureFilter::TF_Trilinear;
+		UpscaleTexture->UpdateResource();
+		// create update texture region
+		UpscaleTextureUpdateRegion = FUpdateTextureRegion2D(0, 0, 0, 0, TextureResolution.X * 4, TextureResolution.Y * 4);
+	}
 	if(PostProcessVolume && PostProcessMaterialInstance)
 	{
 		PostProcessMaterialInstanceDynamic = UMaterialInstanceDynamic::Create(PostProcessMaterialInstance, nullptr);
-		PostProcessMaterialInstanceDynamic->SetTextureParameterValue(FName("FogOfWarRenderTarget"), Texture);
+		PostProcessMaterialInstanceDynamic->SetTextureParameterValue(FName("FogOfWarRenderTarget"), bUseUpscaleTexture? UpscaleTexture : Texture);
 		PostProcessMaterialInstanceDynamic->SetVectorParameterValue(FName("OriginCoordinate"), OriginCoordinate);
 		PostProcessMaterialInstanceDynamic->SetScalarParameterValue(FName("TileSize"), TileSize);
 		PostProcessMaterialInstanceDynamic->SetVectorParameterValue(FName("MappingWorldSize"), FVector(TileSize * TileResolution.X, TileSize * TileResolution.Y, 0.f));
@@ -187,6 +330,12 @@ void AFogOfWar::DestroyTexture()
 		delete[] TextureBuffer;
 		TextureBuffer= nullptr;
 	}
+	if(UpscaleTextureBuffer)
+	{
+		delete[] UpscaleTextureBuffer;
+		UpscaleTextureBuffer= nullptr;
+	}
+
 }
 
 #define Floor FloorToInt
