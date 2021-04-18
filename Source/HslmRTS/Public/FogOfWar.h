@@ -62,18 +62,19 @@ public:
 	// the texture
 	UPROPERTY()
 	UTexture2D* Texture;
-	uint8* TextureBuffer;
+	TArray<uint8> TextureBuffer;
 	uint32* TextureBufferSize;
 	FUpdateTextureRegion2D TextureUpdateRegion;
 	FIntVector TextureResolution;
 	
 	UPROPERTY()
 	UTexture2D* UpscaleTexture;
-	uint8* UpscaleTextureBuffer;
+	TArray<uint8> UpscaleTextureBuffer;
 	uint32* UpscaleTextureBufferSize;
 	FUpdateTextureRegion2D UpscaleTextureUpdateRegion;
 	FIntVector UpscaleTextureResolution;
-
+	
+	TArray<uint8> UpscaleTextureHorizontalBlurData;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="FogOfWar")
 	bool bUseUpscaleTexture = false;
 	

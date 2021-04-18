@@ -5,11 +5,13 @@
 
 #include "HslmRTS.h"
 #include "FogOfWarSubsystem.h"
+#include "HslmRTSFunctionLibrary.h"
 #include "RTSAgentComponent.h"
 #include "RTSWorldVolume.h"
 #include "Components/BrushComponent.h"
 #include "Components/DecalComponent.h"
 #include "Engine/PostProcessVolume.h"
+
 typedef uint8_t* Pixels4x4;
 
 uint32_t UpscaleMapping[16 * 16]=
@@ -19,80 +21,80 @@ uint32_t UpscaleMapping[16 * 16]=
 	0x00000000, 0x00000000, 0x00000000, 0x00000000, // 0x00, 0x00
 	0x00000000, 0x00000000, 0x00000000, 0x00000000,
 
-	0x0000FF00, 0x00008000, 0x00000000, 0x00000000, // 1
-    0x00008000, 0x00000000, 0x00000000, 0x00000000, // 0xFF, 0x00
+	0x00FF0000, 0x00800000, 0x00000000, 0x00000000, // 1
+    0x00800000, 0x00000000, 0x00000000, 0x00000000, // 0xFF, 0x00
     0x00000000, 0x00000000, 0x00000000, 0x00000000, // 0x00, 0x00
     0x00000000, 0x00000000, 0x00000000, 0x00000000,
 	
-	0x00000000, 0x00000000, 0x00008000, 0x0000FF00, // 2
-	0x00000000, 0x00000000, 0x00000000, 0x00008000, // 0x00, 0xFF
+	0x00000000, 0x00000000, 0x00800000, 0x00FF0000, // 2
+	0x00000000, 0x00000000, 0x00000000, 0x00800000, // 0x00, 0xFF
 	0x00000000, 0x00000000, 0x00000000, 0x00000000, // 0x00, 0x00
 	0x00000000, 0x00000000, 0x00000000, 0x00000000,
 	
-	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 3
-    0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 0xFF, 0xFF
+	0x00FF0000, 0x00FF0000, 0x00FF0000, 0x00FF0000, // 3
+    0x00FF0000, 0x00FF0000, 0x00FF0000, 0x00FF0000, // 0xFF, 0xFF
     0x00000000, 0x00000000, 0x00000000, 0x00000000, // 0x00, 0x00
     0x00000000, 0x00000000, 0x00000000, 0x00000000,
 	
 	0x00000000, 0x00000000, 0x00000000, 0x00000000, // 4
     0x00000000, 0x00000000, 0x00000000, 0x00000000, // 0x00, 0x00
-    0x00008000, 0x00000000, 0x00000000, 0x00000000, // 0xFF, 0x00
-    0x0000FF00, 0x00008000, 0x00000000, 0x00000000,
+    0x00800000, 0x00000000, 0x00000000, 0x00000000, // 0xFF, 0x00
+    0x00FF0000, 0x00800000, 0x00000000, 0x00000000,
 
-	0x0000FF00, 0x0000FF00, 0x00000000, 0x00000000, // 5
-    0x0000FF00, 0x0000FF00, 0x00000000, 0x00000000, // 0xFF, 0x00
-    0x0000FF00, 0x0000FF00, 0x00000000, 0x00000000, // 0xFF, 0x00
-    0x0000FF00, 0x0000FF00, 0x00000000, 0x00000000,
+	0x00FF0000, 0x00FF0000, 0x00000000, 0x00000000, // 5
+    0x00FF0000, 0x00FF0000, 0x00000000, 0x00000000, // 0xFF, 0x00
+    0x00FF0000, 0x00FF0000, 0x00000000, 0x00000000, // 0xFF, 0x00
+    0x00FF0000, 0x00FF0000, 0x00000000, 0x00000000,
 	
-	0x00000000, 0x00000000, 0x00008000, 0x0000FF00, // 6
-	0x00000000, 0x00000000, 0x00000000, 0x00008000, // 0x00, 0xFF
-	0x00008000, 0x00000000, 0x00000000, 0x00000000, // 0xFF, 0x00
-	0x0000FF00, 0x00008000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00800000, 0x00FF0000, // 6
+	0x00000000, 0x00000000, 0x00000000, 0x00800000, // 0x00, 0xFF
+	0x00800000, 0x00000000, 0x00000000, 0x00000000, // 0xFF, 0x00
+	0x00FF0000, 0x00800000, 0x00000000, 0x00000000,
 	
-	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 7
-    0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 0xFF, 0xFF
-    0x0000FF00, 0x0000FF00, 0x0000FF00, 0x00008000, // 0xFF, 0x00
-    0x0000FF00, 0x0000FF00, 0x00008000, 0x00000000,
+	0x00FF0000, 0x00FF0000, 0x00FF0000, 0x00FF0000, // 7
+    0x00FF0000, 0x00FF0000, 0x00FF0000, 0x00FF0000, // 0xFF, 0xFF
+    0x00FF0000, 0x00FF0000, 0x00FF0000, 0x00800000, // 0xFF, 0x00
+    0x00FF0000, 0x00FF0000, 0x00800000, 0x00000000,
 
 	0x00000000, 0x00000000, 0x00000000, 0x00000000, // 8
 	0x00000000, 0x00000000, 0x00000000, 0x00000000, // 0x00, 0x00
-	0x00000000, 0x00000000, 0x00000000, 0x00008000, // 0x00, 0xFF
-	0x00000000, 0x00000000, 0x00008000, 0x0000FF00,
+	0x00000000, 0x00000000, 0x00000000, 0x00800000, // 0x00, 0xFF
+	0x00000000, 0x00000000, 0x00800000, 0x00FF0000,
 		
-	0x0000FF00, 0x00008000, 0x00000000, 0x00000000, // 9
-    0x00008000, 0x00000000, 0x00000000, 0x00000000, // 0xFF, 0x00
-    0x00000000, 0x00000000, 0x00000000, 0x00008000, // 0x00, 0xFF
-    0x00000000, 0x00000000, 0x00008000, 0x0000FF00,
+	0x00FF0000, 0x00800000, 0x00000000, 0x00000000, // 9
+    0x00800000, 0x00000000, 0x00000000, 0x00000000, // 0xFF, 0x00
+    0x00000000, 0x00000000, 0x00000000, 0x00800000, // 0x00, 0xFF
+    0x00000000, 0x00000000, 0x00800000, 0x00FF0000,
 
-	0x00000000, 0x00000000, 0x0000FF00, 0x0000FF00, // 10
-	0x00000000, 0x00000000, 0x0000FF00, 0x0000FF00, // 0x00, 0xFF
-	0x00000000, 0x00000000, 0x0000FF00, 0x0000FF00, // 0x00, 0xFF
-	0x00000000, 0x00000000, 0x0000FF00, 0x0000FF00,
+	0x00000000, 0x00000000, 0x00FF0000, 0x00FF0000, // 10
+	0x00000000, 0x00000000, 0x00FF0000, 0x00FF0000, // 0x00, 0xFF
+	0x00000000, 0x00000000, 0x00FF0000, 0x00FF0000, // 0x00, 0xFF
+	0x00000000, 0x00000000, 0x00FF0000, 0x00FF0000,
 
-	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 11
-    0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 0xFF, 0xFF
-    0x00008000, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 0x00, 0xFF
-    0x00000000, 0x00008000, 0x0000FF00, 0x0000FF00,
+	0x00FF0000, 0x00FF0000, 0x00FF0000, 0x00FF0000, // 11
+    0x00FF0000, 0x00FF0000, 0x00FF0000, 0x00FF0000, // 0xFF, 0xFF
+    0x00800000, 0x00FF0000, 0x00FF0000, 0x00FF0000, // 0x00, 0xFF
+    0x00000000, 0x00800000, 0x00FF0000, 0x00FF0000,
 	
 	0x00000000, 0x00000000, 0x00000000, 0x00000000, // 12
 	0x00000000, 0x00000000, 0x00000000, 0x00000000, // 0x00, 0x00
-	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 0xFF, 0xFF
-	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00,
+	0x00FF0000, 0x00FF0000, 0x00FF0000, 0x00FF0000, // 0xFF, 0xFF
+	0x00FF0000, 0x00FF0000, 0x00FF0000, 0x00FF0000,
 
-	0x0000FF00, 0x0000FF00, 0x00008000, 0x00000000, // 13
-	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x00008000, // 0xFF, 0x00
-	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 0xFF, 0xFF
-	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00,
+	0x00FF0000, 0x00FF0000, 0x00800000, 0x00000000, // 13
+	0x00FF0000, 0x00FF0000, 0x00FF0000, 0x00800000, // 0xFF, 0x00
+	0x00FF0000, 0x00FF0000, 0x00FF0000, 0x00FF0000, // 0xFF, 0xFF
+	0x00FF0000, 0x00FF0000, 0x00FF0000, 0x00FF0000,
 	
-	0x00000000, 0x00008000, 0x0000FF00, 0x0000FF00, // 14
-	0x00008000, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 0x00, 0xFF
-	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 0xFF, 0xFF
-	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00,
+	0x00000000, 0x00800000, 0x00FF0000, 0x00FF0000, // 14
+	0x00800000, 0x00FF0000, 0x00FF0000, 0x00FF0000, // 0x00, 0xFF
+	0x00FF0000, 0x00FF0000, 0x00FF0000, 0x00FF0000, // 0xFF, 0xFF
+	0x00FF0000, 0x00FF0000, 0x00FF0000, 0x00FF0000,
 
-	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 15
-	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 0xFF, 0xFF
-	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00, // 0xFF, 0xFF
-	0x0000FF00, 0x0000FF00, 0x0000FF00, 0x0000FF00,
+	0x00FF0000, 0x00FF0000, 0x00FF0000, 0x00FF0000, // 15
+	0x00FF0000, 0x00FF0000, 0x00FF0000, 0x00FF0000, // 0xFF, 0xFF
+	0x00FF0000, 0x00FF0000, 0x00FF0000, 0x00FF0000, // 0xFF, 0xFF
+	0x00FF0000, 0x00FF0000, 0x00FF0000, 0x00FF0000,
 };
 
 // Sets default values
@@ -106,7 +108,6 @@ AFogOfWar::AFogOfWar()
 	GridDecal->bIsEditorOnly = true;
 	GridDecal->SetRelativeRotation(FRotator(0.f,90.f, 0.f));
 
-	TextureBuffer = nullptr;
 	TileSize = 100.f;
 
 }
@@ -164,8 +165,8 @@ void AFogOfWar::UpdateFogOfWar()
 		IterateVisionRight(Context,1);
 		IterateVisionLeft(Context,1);
 	}
-	if(bUseUpscaleTexture){
-		UpscaleTextureBuffer = new uint8[TextureResolution.X * TextureResolution.Y * 4 * 16];
+	if(bUseUpscaleTexture)
+	{
 		for (int32 Y = 0; Y < TextureResolution.Y; ++Y)
 		{
 			FString TempString;
@@ -194,11 +195,140 @@ void AFogOfWar::UpdateFogOfWar()
 					// }
 				}
 			}
-			UE_LOG(LogHslmRTS, Log, TEXT("%s"), *TempString);
+			//UE_LOG(LogHslmRTS, Log, TEXT("%s"), *TempString);
 		}
-		UpscaleTexture->UpdateTextureRegions(0, 1, &UpscaleTextureUpdateRegion, TextureResolution.X * 4 * 4, 4, UpscaleTextureBuffer);
+
+		TArray<float> GaussianBlurKernel = UHslmRTSFunctionLibrary::ComputeGaussianKernel(7,0.84089642);
+		// FString TempString;
+		// float sum = 0;
+		// for (int32 Y = 0; Y < GaussianBlurKernel.Num(); ++Y)
+		// {
+		// 	TempString += FString::Printf(TEXT(" %f "), GaussianBlurKernel[Y] );
+		// 	sum +=GaussianBlurKernel[Y] ;
+		// }
+		// UE_LOG(LogHslmRTS, Log, TEXT("%s"), *TempString);
+		// UE_LOG(LogHslmRTS, Log, TEXT("%f"), sum);
+		double GaussianBlurTime;
+		{
+			SCOPE_SECONDS_COUNTER(GaussianBlurTime);
+			int32 GaussianBlurKernelNum = GaussianBlurKernel.Num();
+			int32 HalfGaussianBlurKernelNum = GaussianBlurKernelNum / 2;
+			
+			for (int32 Y = 0; Y < UpscaleTextureResolution.Y; ++Y)
+			{
+				for (int32 X = 0; X < HalfGaussianBlurKernelNum; ++X)
+				{
+					float Sum = 0;
+					for (int32 i = -HalfGaussianBlurKernelNum; i <= HalfGaussianBlurKernelNum; ++i)
+					{
+						if(X + i > 0)
+						{
+							Sum += UpscaleTextureBuffer[(Y * UpscaleTextureResolution.X + X + i) * 4 + 2] * GaussianBlurKernel[i + HalfGaussianBlurKernelNum];
+						}
+					}
+					UpscaleTextureHorizontalBlurData[(Y * UpscaleTextureResolution.X + X) * 4 + 2] = static_cast<uint8>(Sum);
+				}
+				for (int32 X = HalfGaussianBlurKernelNum; X < UpscaleTextureResolution.X - HalfGaussianBlurKernelNum; ++X)
+				{
+					float Sum = 0;
+					for (int32 i = -HalfGaussianBlurKernelNum; i <= HalfGaussianBlurKernelNum; ++i)
+					{
+						Sum += (UpscaleTextureBuffer[(Y * UpscaleTextureResolution.X + X + i) * 4 + 2] * GaussianBlurKernel[i + HalfGaussianBlurKernelNum]);
+					}
+					UpscaleTextureHorizontalBlurData[(Y * UpscaleTextureResolution.X + X) * 4 + 2] = static_cast<uint8>(Sum);
+				}
+				for (int32 X = UpscaleTextureResolution.X  - HalfGaussianBlurKernelNum; X < UpscaleTextureResolution.X; ++X)
+				{
+					float Sum = 0;
+					for (int32 i = -HalfGaussianBlurKernelNum; i <= HalfGaussianBlurKernelNum; ++i)
+					{
+						if(X + i < UpscaleTextureResolution.X)
+						{
+							Sum += UpscaleTextureBuffer[(Y * UpscaleTextureResolution.X + X + i) * 4 + 2] * GaussianBlurKernel[i + HalfGaussianBlurKernelNum];
+						}
+					}
+					UpscaleTextureHorizontalBlurData[(Y * UpscaleTextureResolution.X + X) * 4 + 2] = static_cast<uint8>(Sum);
+				}
+			}
+			//FMemory::Memcpy(UpscaleTextureBuffer.GetData(),UpscaleTextureHorizontalBlurData.GetData(),UpscaleTextureResolution.X * UpscaleTextureResolution.Y * 4);
+
+			for (int32 X = 0; X < UpscaleTextureResolution.X; ++X)
+			{
+				for (int32 Y = 0; Y < HalfGaussianBlurKernelNum; ++Y)
+				{
+					float Sum = 0;
+					for (int32 i = -HalfGaussianBlurKernelNum; i <= HalfGaussianBlurKernelNum; ++i)
+					{
+						if(Y + i > 0)
+						{
+							Sum += UpscaleTextureHorizontalBlurData[((Y + i) * UpscaleTextureResolution.X + X) * 4 + 2] * GaussianBlurKernel[i + HalfGaussianBlurKernelNum];
+						}
+					}
+					UpscaleTextureBuffer[(Y * UpscaleTextureResolution.X + X) * 4 + 2] = static_cast<uint8>(Sum);
+				}
+				for (int32 Y = HalfGaussianBlurKernelNum; Y < UpscaleTextureResolution.Y - HalfGaussianBlurKernelNum; ++Y)
+				{
+					float Sum = 0;
+					for (int32 i = -HalfGaussianBlurKernelNum; i <= HalfGaussianBlurKernelNum; ++i)
+					{
+						Sum += UpscaleTextureHorizontalBlurData[((Y + i) * UpscaleTextureResolution.X + X) * 4 + 2] * GaussianBlurKernel[i + HalfGaussianBlurKernelNum];
+					}
+					UpscaleTextureBuffer[(Y * UpscaleTextureResolution.X + X) * 4 + 2] = static_cast<uint8>(Sum);
+				}
+				for (int32 Y = UpscaleTextureResolution.Y  - HalfGaussianBlurKernelNum; Y < UpscaleTextureResolution.Y; ++Y)
+				{
+					float Sum = 0;
+					for (int32 i = -HalfGaussianBlurKernelNum; i <= HalfGaussianBlurKernelNum; ++i)
+					{
+						if(Y + i < UpscaleTextureResolution.Y)
+						{
+							Sum += UpscaleTextureHorizontalBlurData[((Y + i) * UpscaleTextureResolution.X + X) * 4 + 2] * GaussianBlurKernel[i + HalfGaussianBlurKernelNum];
+						}
+					}
+					UpscaleTextureBuffer[(Y * UpscaleTextureResolution.X + X) * 4 + 2] = static_cast<uint8>(Sum);
+				}
+			}
+		}
+		UE_LOG(LogHslmRTS, Log, TEXT("GaussianBlurTime %f"), GaussianBlurTime);  
+		// for (int32 X = 0; X < TextureResolution.X * 4; ++X)
+		// {
+		// 	for (int32 Y = 0; Y < HalfGaussianBlurKernelNum; ++Y)
+		// 	{
+		// 		float Sum = 0;
+		// 		for (int32 i = -HalfGaussianBlurKernelNum; i <= HalfGaussianBlurKernelNum; ++i)
+		// 		{
+		// 			if(Y + i > 0)
+		// 			{
+		// 				Sum += UpscaleTextureHorizontalBlurData[((Y + i) * TextureResolution.X * 4 + X) * 4 + 1] * GaussianBlurKernel[i + HalfGaussianBlurKernelNum];
+		// 			}
+		// 		}
+		// 		UpscaleTextureBuffer[(Y * TextureResolution.X * 4 + X) * 4] = Sum;
+		// 	}
+		// 	for (int32 Y = HalfGaussianBlurKernelNum; Y < TextureResolution.Y * 4  - HalfGaussianBlurKernelNum; ++Y)
+		// 	{
+		// 		float Sum = 0;
+		// 		for (int32 i = -HalfGaussianBlurKernelNum; i <= HalfGaussianBlurKernelNum; ++i)
+		// 		{
+		// 			Sum += UpscaleTextureHorizontalBlurData[((Y + i) * TextureResolution.X * 4 + X) * 4 + 1] * GaussianBlurKernel[i + HalfGaussianBlurKernelNum];
+		// 		}
+		// 		UpscaleTextureBuffer[(Y * TextureResolution.X * 4 + X) * 4] = Sum;
+		// 	}
+		// 	for (int32 Y = TextureResolution.Y * 4  - HalfGaussianBlurKernelNum; Y < TextureResolution.X * 4; ++Y)
+		// 	{
+		// 		float Sum = 0;
+		// 		for (int32 i = -HalfGaussianBlurKernelNum; i <= HalfGaussianBlurKernelNum; ++i)
+		// 		{
+		// 			if(Y + i < TextureResolution.Y * 4)
+		// 			{
+		// 				Sum += UpscaleTextureHorizontalBlurData[((Y + i) * TextureResolution.X * 4 + X) * 4 + 1] * GaussianBlurKernel[i + HalfGaussianBlurKernelNum];
+		// 			}
+		// 		}
+		// 		UpscaleTextureBuffer[(Y * TextureResolution.X * 4 + X) * 4] = Sum;
+		// 	}
+		// }
+		UpscaleTexture->UpdateTextureRegions(0, 1, &UpscaleTextureUpdateRegion, UpscaleTextureResolution.X * 4, 4, UpscaleTextureBuffer.GetData());
 	}else{
-		Texture->UpdateTextureRegions(0, 1, &TextureUpdateRegion, TextureResolution.X * 4, 4, TextureBuffer);
+		Texture->UpdateTextureRegions(0, 1, &TextureUpdateRegion, TextureResolution.X * 4, 4, TextureBuffer.GetData());
 	}
 }
 
@@ -263,7 +393,7 @@ void AFogOfWar::CreateTexture()
 	TextureResolution.Y = TileResolution.Y;
 
 	// new and init texture buffer
-	TextureBuffer = new uint8[TextureResolution.X * TextureResolution.Y * 4];
+	TextureBuffer.SetNumZeroed(TextureResolution.X * TextureResolution.Y * 4);
 	for (int32 Y = 0; Y < TextureResolution.Y; ++Y)
 	{
 		for (int32 X = 0; X < TextureResolution.X; ++X)
@@ -290,27 +420,29 @@ void AFogOfWar::CreateTexture()
 	if(bUseUpscaleTexture)
 	{
 		// new and init texture buffer
-		UpscaleTextureBuffer = new uint8[TextureResolution.X * TextureResolution.Y * 4 * 16];
-		for (int32 Y = 0; Y < TextureResolution.Y * 4; ++Y)
-        {
-        	for (int32 X = 0; X < TextureResolution.X * 4; ++X)
-        	{
-        		const int i = Y * TextureResolution.X * 4  + X;
-        		const int iBlue = i * 4 + 0;
-        		const int iGreen = i * 4 + 1;
-        		const int iRed = i * 4 + 2;
-        		const int iAlpha = i * 4 + 3;
-        		UpscaleTextureBuffer[iBlue] = 0;
-        		UpscaleTextureBuffer[iGreen] = 0;
-        		UpscaleTextureBuffer[iRed] = 0;
-        		UpscaleTextureBuffer[iAlpha] = 0;
-        	}
-        }
-		UpscaleTexture = UTexture2D::CreateTransient(TextureResolution.X * 4, TextureResolution.Y * 4);
+		UpscaleTextureResolution = TextureResolution * 4;
+		UpscaleTextureBuffer.SetNumZeroed(UpscaleTextureResolution.X * UpscaleTextureResolution.Y * 4);
+		UpscaleTextureHorizontalBlurData.SetNumZeroed(UpscaleTextureResolution.X * UpscaleTextureResolution.Y * 4);
+		// for (int32 Y = 0; Y < UpscaleTextureResolution.Y; ++Y)
+  //       {
+  //       	for (int32 X = 0; X < UpscaleTextureResolution.X; ++X)
+  //       	{
+  //       		const int i = Y * UpscaleTextureResolution.X  + X;
+  //       		const int iBlue = i * 4 + 0;
+  //       		const int iGreen = i * 4 + 1;
+  //       		const int iRed = i * 4 + 2;
+  //       		const int iAlpha = i * 4 + 3;
+  //       		UpscaleTextureBuffer[iBlue] = 0;
+  //       		UpscaleTextureBuffer[iGreen] = 0;
+  //       		UpscaleTextureBuffer[iRed] = 0;
+  //       		UpscaleTextureBuffer[iAlpha] = 0;
+  //       	}
+  //       }
+		UpscaleTexture = UTexture2D::CreateTransient(UpscaleTextureResolution.X, UpscaleTextureResolution.Y);
 		UpscaleTexture->Filter = TextureFilter::TF_Trilinear;
 		UpscaleTexture->UpdateResource();
 		// create update texture region
-		UpscaleTextureUpdateRegion = FUpdateTextureRegion2D(0, 0, 0, 0, TextureResolution.X * 4, TextureResolution.Y * 4);
+		UpscaleTextureUpdateRegion = FUpdateTextureRegion2D(0, 0, 0, 0, UpscaleTextureResolution.X, UpscaleTextureResolution.Y);
 	}
 	if(PostProcessVolume && PostProcessMaterialInstance)
 	{
@@ -326,16 +458,6 @@ void AFogOfWar::CreateTexture()
 
 void AFogOfWar::DestroyTexture()
 {
-	if(TextureBuffer)
-	{
-		delete[] TextureBuffer;
-		TextureBuffer= nullptr;
-	}
-	if(UpscaleTextureBuffer)
-	{
-		delete[] UpscaleTextureBuffer;
-		UpscaleTextureBuffer= nullptr;
-	}
 
 }
 
